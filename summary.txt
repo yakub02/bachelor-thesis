@@ -1,0 +1,241 @@
+ D:\BakalarskaPrace_Vraga\bachelor_thesis\
+  │
+  ├── .gitignore
+  ├── commits.txt
+  ├── commitsv2.txt
+  ├── IMPLEMENTATION_PLAN.txt
+  ├── info.md
+  ├── install.cmd
+  ├── PROJECT_REPORT.md
+  │
+  ├── .claude/
+  │   └── settings.local.json
+  │
+  ├── raveture/
+  │   ├── .gitignore
+  │   ├── inspiration.html
+  │   │
+  │   ├── backend/                          # Flask backend (port 5000)
+  │   │   ├── run.py
+  │   │   ├── app/
+  │   │   │   ├── __init__.py
+  │   │   │   ├── config.py
+  │   │   │   ├── api/
+  │   │   │   │   ├── __init__.py
+  │   │   │   │   ├── auth/
+  │   │   │   │   │   ├── __init__.py
+  │   │   │   │   │   └── routes.py
+  │   │   │   │   ├── events/
+  │   │   │   │   │   ├── __init__.py
+  │   │   │   │   │   └── routes.py
+  │   │   │   │   ├── users/
+  │   │   │   │   │   ├── __init__.py
+  │   │   │   │   │   └── routes.py
+  │   │   │   │   ├── archive/
+  │   │   │   │   │   ├── __init__.py
+  │   │   │   │   │   └── routes.py
+  │   │   │   │   ├── forum/
+  │   │   │   │   │   ├── __init__.py
+  │   │   │   │   │   └── routes.py
+  │   │   │   │   └── media/
+  │   │   │   │       ├── __init__.py
+  │   │   │   │       └── routes.py
+  │   │   │   ├── models/
+  │   │   │   │   ├── __init__.py
+  │   │   │   │   ├── user.py
+  │   │   │   │   ├── event.py
+  │   │   │   │   ├── archive.py
+  │   │   │   │   ├── forum.py
+  │   │   │   │   └── media.py
+  │   │   │   ├── services/
+  │   │   │   │   └── __init__.py
+  │   │   │   └── utils/
+  │   │   │       ├── __init__.py
+  │   │   │       ├── security.py
+  │   │   │       └── validators.py
+  │   │   ├── migrations/
+  │   │   │   ├── env.py
+  │   │   │   └── versions/
+  │   │   │       └── 670c423c27c6_initial_migration.py
+  │   │   ├── tests/
+  │   │   │   ├── __init__.py
+  │   │   │   ├── conftest.py
+  │   │   │   ├── test_auth.py
+  │   │   │   └── test_health.py
+  │   │   └── venv/                         # Python virtual environment
+  │   │
+  │   └── frontend/                         # React + Vite frontend
+  │       ├── .env
+  │       ├── .gitignore
+  │       ├── eslint.config.js
+  │       ├── index.html
+  │       ├── package.json
+  │       ├── package-lock.json
+  │       ├── README.md
+  │       ├── tsconfig.json
+  │       ├── tsconfig.app.json
+  │       ├── tsconfig.node.json
+  │       ├── vercel.json
+  │       ├── vite.config.ts
+  │       ├── public/
+  │       ├── node_modules/                 # npm dependencies
+  │       └── src/
+  │           ├── App.tsx
+  │           ├── main.tsx
+  │           ├── index.css
+  │           ├── vite-env.d.ts
+  │           │
+  │           ├── components/
+  │           │   ├── ui/
+  │           │   │   ├── index.ts
+  │           │   │   ├── Button.tsx
+  │           │   │   ├── Card.tsx
+  │           │   │   ├── Input.tsx
+  │           │   │   ├── Select.tsx
+  │           │   │   ├── TextArea.tsx
+  │           │   │   ├── Calendar.tsx
+  │           │   │   ├── DateTimePicker.tsx
+  │           │   │   ├── Popover.tsx
+  │           │   │   ├── EventCard.tsx
+  │           │   │   ├── FeatureCard.tsx
+  │           │   │   ├── ModuleCard.tsx
+  │           │   │   └── SectionHeader.tsx
+  │           │   │
+  │           │   ├── layout/
+  │           │   │   ├── index.ts
+  │           │   │   ├── Background.tsx
+  │           │   │   ├── Footer.tsx
+  │           │   │   └── Navbar.tsx
+  │           │   │
+  │           │   ├── home/
+  │           │   │   ├── index.ts
+  │           │   │   ├── HeroSection.tsx
+  │           │   │   ├── FeaturesSection.tsx
+  │           │   │   ├── PlatformModulesSection.tsx
+  │           │   │   ├── NewsletterSection.tsx
+  │           │   │   └── EventsSection.tsx
+  │           │   │
+  │           │   ├── shop/
+  │           │   │   ├── index.ts
+  │           │   │   ├── OrderSummary.tsx
+  │           │   │   ├── QRCodeDisplay.tsx
+  │           │   │   ├── TicketCard.tsx
+  │           │   │   └── TicketTypeCard.tsx
+  │           │   │
+  │           │   └── organizer/
+  │           │       ├── index.ts
+  │           │       ├── DiscountCodeManager.tsx
+  │           │       ├── RecentOrders.tsx
+  │           │       ├── StatCard.tsx
+  │           │       └── TicketTypeManager.tsx
+  │           │
+  │           ├── pages/
+  │           │   ├── index.ts
+  │           │   ├── Home.tsx
+  │           │   ├── Login.tsx
+  │           │   ├── Register.tsx
+  │           │   ├── CreateEvent.tsx
+  │           │   ├── EditEvent.tsx              # NEW
+  │           │   ├── MyEvents.tsx
+  │           │   ├── EventShop.tsx
+  │           │   ├── Checkout.tsx
+  │           │   ├── MyTickets.tsx
+  │           │   ├── TicketDetail.tsx
+  │           │   ├── TicketAdmin.tsx
+  │           │   └── OrganizerDashboard.tsx
+  │           │
+  │           ├── context/
+  │           │   ├── index.ts
+  │           │   └── AuthContext.tsx
+  │           │
+  │           ├── services/
+  │           │   ├── index.ts
+  │           │   ├── ravetureApi.ts
+  │           │   └── ticketingApi.ts
+  │           │
+  │           ├── data/
+  │           │   ├── index.ts
+  │           │   ├── events.ts
+  │           │   ├── features.ts
+  │           │   ├── modules.ts
+  │           │   ├── navigation.ts
+  │           │   └── testEvent.ts
+  │           │
+  │           ├── hooks/
+  │           │   └── index.ts
+  │           │
+  │           ├── types/
+  │           │   └── index.ts
+  │           │
+  │           ├── styles/
+  │           │   └── index.ts
+  │           │
+  │           └── utils/
+  │               └── index.ts
+  │
+  └── ticketing-service/                    # Flask ticketing microservice (port 5001)
+      ├── run.py
+      ├── requirements.txt
+      ├── .claude/
+      │   └── settings.local.json
+      ├── app/
+      │   ├── __init__.py
+      │   ├── config.py
+      │   ├── api/
+      │   │   ├── __init__.py
+      │   │   ├── admin/
+      │   │   │   ├── __init__.py
+      │   │   │   └── routes.py
+      │   │   ├── clients/
+      │   │   │   ├── __init__.py
+      │   │   │   └── routes.py
+      │   │   ├── discounts/
+      │   │   │   ├── __init__.py
+      │   │   │   └── routes.py
+      │   │   ├── orders/
+      │   │   │   ├── __init__.py
+      │   │   │   └── routes.py
+      │   │   ├── resale/
+      │   │   │   ├── __init__.py
+      │   │   │   └── routes.py
+      │   │   ├── tickets/
+      │   │   │   ├── __init__.py
+      │   │   │   └── routes.py
+      │   │   └── validate/
+      │   │       ├── __init__.py
+      │   │       └── routes.py
+      │   ├── models/
+      │   │   ├── __init__.py
+      │   │   └── ticket.py
+      │   ├── services/
+      │   │   ├── __init__.py
+      │   │   └── pdf_service.py
+      │   └── utils/
+      │       ├── __init__.py
+      │       ├── auth.py
+      │       ├── qr.py
+      │       ├── security.py
+      │       └── validators.py
+      ├── migrations/
+      │   ├── env.py
+      │   └── versions/
+      │       └── a595e29f71d9_initial_migration.py
+      ├── scripts/
+      │   └── seed_test_data.py
+      ├── tests/
+      │   ├── __init__.py
+      │   ├── conftest.py
+      │   ├── test_health.py
+      │   └── test_security.py
+      └── venv/                             # Python virtual environment
+
+  Přehled architektury
+  ┌───────────────────┬──────┬───────────────────────────┬──────────────────────────────────────────────────────┐
+  │      Služba       │ Port │        Technologie        │                        Popis                         │
+  ├───────────────────┼──────┼───────────────────────────┼──────────────────────────────────────────────────────┤
+  │ raveture/backend  │ 5000 │ Flask + SQLAlchemy        │ Hlavní API (auth, events, users)                     │
+  ├───────────────────┼──────┼───────────────────────────┼──────────────────────────────────────────────────────┤
+  │ ticketing-service │ 5001 │ Flask + SQLAlchemy        │ Ticketing microservice (tickets, orders, validation) │
+  ├───────────────────┼──────┼───────────────────────────┼──────────────────────────────────────────────────────┤
+  │ raveture/frontend │ 5173 │ React + Vite + TypeScript │ Frontend SPA                                         │
+  └───────────────────┴──────┴───────────────────────────┴──────────────────────────────────────────────────────┘
