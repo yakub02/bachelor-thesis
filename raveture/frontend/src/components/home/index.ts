@@ -1,0 +1,5 @@
+export { HeroSection } from './HeroSection'
+export { FeaturesSection } from './FeaturesSection'
+export { EventsSection } from './EventsSection'
+export { PlatformModulesSection } from './PlatformModulesSection'
+export { NewsletterSection } from './NewsletterSection'
