@@ -1,0 +1,376 @@
+@import "tailwindcss";
+
+/* ===== SHADCN UI DARK THEME VARIABLES ===== */
+@layer base {
+  :root {
+    --background: 11 11 11;              /* #0b0b0b */
+    --foreground: 255 255 255;           /* #ffffff */
+
+    --card: 22 22 22;                    /* #161616 - graphite */
+    --card-foreground: 255 255 255;
+
+    --popover: 22 22 22;
+    --popover-foreground: 255 255 255;
+
+    --primary: 218 120 88;               /* #da7858 - our orange */
+    --primary-foreground: 11 11 11;      /* dark on primary */
+
+    --secondary: 37 37 37;
+    --secondary-foreground: 255 255 255;
+
+    --muted: 37 37 37;
+    --muted-foreground: 107 114 128;     /* #6b7280 */
+
+    --accent: 37 37 37;
+    --accent-foreground: 218 120 88;
+
+    --destructive: 239 68 68;            /* #ef4444 */
+    --destructive-foreground: 255 255 255;
+
+    --border: 37 37 37;                  /* #252525 */
+    --input: 37 37 37;
+    --ring: 218 120 88;                  /* primary color for focus rings */
+
+    --chart-1: 218 120 88;
+    --chart-2: 34 197 94;
+    --chart-3: 59 130 246;
+    --chart-4: 251 146 60;
+    --chart-5: 168 85 247;
+
+    --radius: 0rem;                      /* No border radius - brutalist */
+  }
+}
+
+/* ===== THEME CONFIGURATION - BRUTALIST DESIGN ===== */
+@theme {
+  /* Primary Colors - Industrial Underground */
+  --color-primary: #da7858;
+  --color-bg-dark: #0b0b0b;
+  --color-graphite: #161616;
+  --color-border-grey: #252525;
+
+  /* Text Colors */
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #9ca3af;
+  --color-text-muted: #6b7280;
+
+  /* Status Colors */
+  --color-success: #22c55e;
+  --color-error: #ef4444;
+
+  /* Fonts */
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  /* Sharp Edges - Brutalist Style */
+  --radius-none: 0px;
+  --radius-full: 9999px;
+}
+
+/* ===== BASE STYLES ===== */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-display);
+  background-color: var(--color-bg-dark);
+  color: var(--color-text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* ===== BRUTALIST UTILITIES ===== */
+.brutalist-border {
+  border: 1px solid var(--color-border-grey);
+}
+
+.mono-tech {
+  font-family: var(--font-mono);
+}
+
+/* ===== TYPOGRAPHY ===== */
+.uppercase-wide {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* ===== GRAYSCALE IMAGE EFFECT ===== */
+.grayscale-hover {
+  filter: grayscale(100%);
+  transition: filter 0.5s ease;
+}
+
+.grayscale-hover:hover,
+.group:hover .grayscale-hover {
+  filter: grayscale(0%);
+}
+
+/* ===== GRID PATTERN BACKGROUND ===== */
+.grid-pattern {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
+}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-grey);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-graphite);
+}
+
+/* Thin scrollbar utility */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: var(--color-graphite);
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--color-border-grey);
+}
+
+/* ===== QR SCANNER ANIMATIONS ===== */
+@keyframes scan-line {
+  0%   { top: 10%; }
+  50%  { top: 85%; }
+  100% { top: 10%; }
+}
+
+.animate-scan-line {
+  position: absolute;
+  animation: scan-line 2.5s ease-in-out infinite;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary);
+}
+
+/* ===== SELECTION ===== */
+::selection {
+  background: rgba(218, 120, 88, 0.4);
+  color: white;
+}
+
+/* ===== UTILITY ANIMATIONS ===== */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in-0 {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fade-out-0 {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes zoom-in-95 {
+  from { transform: scale(0.95); }
+  to { transform: scale(1); }
+}
+
+@keyframes zoom-out-95 {
+  from { transform: scale(1); }
+  to { transform: scale(0.95); }
+}
+
+@keyframes slide-in-from-top-2 {
+  from { transform: translateY(-8px); }
+  to { transform: translateY(0); }
+}
+
+@keyframes slide-in-from-bottom-2 {
+  from { transform: translateY(8px); }
+  to { transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out forwards;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.6s ease-out forwards;
+}
+
+/* Radix UI animation classes */
+.animate-in {
+  animation-duration: 150ms;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  animation-fill-mode: forwards;
+}
+
+.animate-out {
+  animation-duration: 100ms;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  animation-fill-mode: forwards;
+}
+
+.fade-in-0 { animation-name: fade-in-0; }
+.fade-out-0 { animation-name: fade-out-0; }
+.zoom-in-95 { animation-name: zoom-in-95; }
+.zoom-out-95 { animation-name: zoom-out-95; }
+.slide-in-from-top-2 { animation-name: slide-in-from-top-2; }
+.slide-in-from-bottom-2 { animation-name: slide-in-from-bottom-2; }
+
+/* ===== MATERIAL SYMBOLS ===== */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===== NEW DESIGN TEST - 2026 MODERN EFFECTS ===== */
+
+/* Floating animation for gradient orbs */
+@keyframes float-slow {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(30px, -30px) rotate(5deg); }
+  50% { transform: translate(0, -50px) rotate(0deg); }
+  75% { transform: translate(-30px, -30px) rotate(-5deg); }
+}
+
+@keyframes float-slow-reverse {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(-30px, 30px) rotate(-5deg); }
+  50% { transform: translate(0, 50px) rotate(0deg); }
+  75% { transform: translate(30px, 30px) rotate(5deg); }
+}
+
+.animate-float-slow {
+  animation: float-slow 20s ease-in-out infinite;
+}
+
+.animate-float-slow-reverse {
+  animation: float-slow-reverse 25s ease-in-out infinite;
+}
+
+/* Grid pulse animation */
+@keyframes grid-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-grid-pulse {
+  animation: grid-pulse 8s ease-in-out infinite;
+}
+
+/* Scroll down indicator */
+@keyframes scroll-down {
+  0% { transform: translateY(0); opacity: 1; }
+  50% { transform: translateY(6px); opacity: 0.5; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.animate-scroll-down {
+  animation: scroll-down 1.5s ease-in-out infinite;
+}
+
+/* Glow pulse */
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(218, 120, 88, 0.3); }
+  50% { box-shadow: 0 0 40px rgba(218, 120, 88, 0.6); }
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+/* Text shimmer effect */
+@keyframes text-shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.animate-text-shimmer {
+  background: linear-gradient(90deg, #fff 0%, #da7858 50%, #fff 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: text-shimmer 3s linear infinite;
+}
+
+/* Border gradient animation */
+@keyframes border-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-border-flow {
+  background: linear-gradient(90deg, #252525, #da7858, #252525);
+  background-size: 200% 200%;
+  animation: border-flow 3s ease infinite;
+}
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
