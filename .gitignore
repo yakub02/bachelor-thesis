@@ -1,0 +1,29 @@
+node_modules
+
+.claude/
+info.md
+install.cmd
+
+# Environment files with secrets
+.env
+.env.local
+.env.production
+.env.*.local
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
