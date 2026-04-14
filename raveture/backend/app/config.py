@@ -94,6 +94,16 @@ class ProductionConfig(Config):
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Strict'
 
+    # TLS — cesty k certifikátu a klíči (nastavit v prostředí)
+    TLS_CERT_FILE = os.getenv('TLS_CERT_FILE')  # např. /etc/ssl/certs/raveture.crt
+    TLS_KEY_FILE = os.getenv('TLS_KEY_FILE')    # např. /etc/ssl/private/raveture.key
+
+    # Vynutit HTTPS schéma pro generování URL
+    PREFERRED_URL_SCHEME = 'https'
+
+    # HSTS — informuje prohlížeče, že web běží výhradně přes HTTPS
+    HSTS_MAX_AGE = 31536000  # 1 rok v sekundách
+
 
 class TestingConfig(Config):
     """Testing configuration."""

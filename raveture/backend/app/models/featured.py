@@ -3,7 +3,7 @@ FeaturedEvent model for RAVETURE Picks.
 Tracks curator information and reasoning for featured events.
 """
 
-import uuid
+import uuid7
 from datetime import datetime
 
 from sqlalchemy.dialects.postgresql import UUID
@@ -20,7 +20,7 @@ class FeaturedEvent(db.Model):
     """
     __tablename__ = 'featured_events'
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
 
     # Event being featured
     event_id = db.Column(

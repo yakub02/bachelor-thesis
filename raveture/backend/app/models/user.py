@@ -3,7 +3,7 @@ User models for RAVETURE Backend.
 Handles authentication, profiles, and user relationships.
 """
 
-import uuid
+import uuid7
 from datetime import datetime
 from enum import Enum as PyEnum
 
@@ -46,7 +46,7 @@ class User(db.Model):
         Index('idx_users_username', 'username', unique=True),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
 
     # Authentication
     email = db.Column(db.String(255), unique=True, nullable=False)

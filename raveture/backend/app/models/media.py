@@ -3,7 +3,7 @@ Media models for RAVETURE Backend.
 Handles audio sets, videos, photos, and playlists.
 """
 
-import uuid
+import uuid7
 from datetime import datetime
 from enum import Enum as PyEnum
 
@@ -40,7 +40,7 @@ class MediaFile(db.Model):
         Index('idx_media_created', 'created_at'),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
     uploader_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False)
 
     # Optional associations
@@ -150,7 +150,7 @@ class Playlist(db.Model):
         Index('idx_playlists_public', 'is_public'),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
     creator_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False)
 
     name = db.Column(db.String(100), nullable=False)
@@ -234,7 +234,7 @@ class Album(db.Model):
         Index('idx_albums_creator', 'creator_id'),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
     event_id = db.Column(UUID(as_uuid=True), db.ForeignKey('events.id'))
     creator_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False)
 

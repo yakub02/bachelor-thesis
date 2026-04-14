@@ -11,6 +11,7 @@ Main platform backend handling:
 
 import os
 import uuid
+import uuid7
 import hashlib
 from datetime import datetime
 
@@ -107,7 +108,7 @@ def create_app(config_name: str = 'default') -> Flask:
     @app.before_request
     def before_request():
         """Set up request context."""
-        g.request_id = str(uuid.uuid4())[:8]
+        g.request_id = str(uuid7.uuid7())[:8]
         g.request_start = datetime.utcnow()
         g.ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
         if g.ip_address and ',' in g.ip_address:

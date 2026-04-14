@@ -3,7 +3,7 @@ Archive models for RAVETURE Backend.
 Handles historical rave scene archive.
 """
 
-import uuid
+import uuid7
 from datetime import datetime
 from enum import Enum as PyEnum
 
@@ -44,7 +44,7 @@ class ArchivedEvent(db.Model):
         Index('idx_archived_events_date', 'date'),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
     original_event_id = db.Column(UUID(as_uuid=True), db.ForeignKey('events.id'))  # If migrated from Event
 
     # Basic info
@@ -138,7 +138,7 @@ class SetRecording(db.Model):
         Index('idx_set_recordings_event', 'archived_event_id'),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
     archived_event_id = db.Column(UUID(as_uuid=True), db.ForeignKey('archived_events.id'), nullable=False)
     uploader_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False)
 
@@ -210,7 +210,7 @@ class ArchiveContribution(db.Model):
         Index('idx_contributions_user', 'user_id'),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
     user_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False)
     archived_event_id = db.Column(UUID(as_uuid=True), db.ForeignKey('archived_events.id'))
 
@@ -260,7 +260,7 @@ class ArchiveFlyer(db.Model):
         Index('idx_archive_flyers_year', 'year'),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
     archived_event_id = db.Column(UUID(as_uuid=True), db.ForeignKey('archived_events.id'))
     uploader_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False)
 

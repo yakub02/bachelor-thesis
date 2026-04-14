@@ -3,7 +3,7 @@ Event models for RAVETURE Backend.
 Handles events, organizers, venues, artists, and lineups.
 """
 
-import uuid
+import uuid7
 from datetime import datetime
 from enum import Enum as PyEnum
 
@@ -49,7 +49,7 @@ class Event(db.Model):
         Index('idx_events_slug', 'slug', unique=True),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
     organizer_id = db.Column(UUID(as_uuid=True), db.ForeignKey('organizers.id'), nullable=False)
     venue_id = db.Column(UUID(as_uuid=True), db.ForeignKey('venues.id'))
 
@@ -140,7 +140,7 @@ class Organizer(db.Model):
         Index('idx_organizers_user', 'user_id'),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
     user_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False)
 
     name = db.Column(db.String(100), nullable=False)
@@ -189,7 +189,7 @@ class Venue(db.Model):
         Index('idx_venues_slug', 'slug', unique=True),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
     created_by_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'))
 
     name = db.Column(db.String(200), nullable=False)
@@ -247,7 +247,7 @@ class Artist(db.Model):
         Index('idx_artists_name', 'name'),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
     user_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'))  # Optional link
 
     name = db.Column(db.String(100), nullable=False)
