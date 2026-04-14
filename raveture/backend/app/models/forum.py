@@ -3,7 +3,7 @@ Forum models for RAVETURE Backend.
 Handles discussions, threads, posts, and reactions.
 """
 
-import uuid
+import uuid7
 from datetime import datetime
 from enum import Enum as PyEnum
 
@@ -43,7 +43,7 @@ class ForumCategory(db.Model):
         Index('idx_forum_categories_order', 'order'),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
 
     name = db.Column(db.String(100), nullable=False)
     slug = db.Column(db.String(100), unique=True, nullable=False)
@@ -94,12 +94,16 @@ class ForumThread(db.Model):
         Index('idx_forum_threads_pinned', 'is_pinned', 'last_post_at'),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
     category_id = db.Column(UUID(as_uuid=True), db.ForeignKey('forum_categories.id'), nullable=False)
     author_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False)
 
     title = db.Column(db.String(200), nullable=False)
     slug = db.Column(db.String(200), nullable=False)
+
+    # Editorial fields
+    cover_image_url = db.Column(db.String(500))
+    subtitle = db.Column(db.String(300))
 
     # First post content (for preview)
     preview_content = db.Column(db.String(500))
@@ -133,6 +137,8 @@ class ForumThread(db.Model):
             'category_id': str(self.category_id),
             'title': self.title,
             'slug': self.slug,
+            'cover_image_url': self.cover_image_url,
+            'subtitle': self.subtitle,
             'preview_content': self.preview_content,
             'is_pinned': self.is_pinned,
             'is_locked': self.is_locked,
@@ -165,7 +171,7 @@ class ForumPost(db.Model):
         Index('idx_forum_posts_author', 'author_id'),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
     thread_id = db.Column(UUID(as_uuid=True), db.ForeignKey('forum_threads.id', ondelete='CASCADE'), nullable=False)
     author_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False)
 
@@ -259,7 +265,7 @@ class ForumReport(db.Model):
         Index('idx_forum_reports_status', 'status'),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
     post_id = db.Column(UUID(as_uuid=True), db.ForeignKey('forum_posts.id'), nullable=False)
     reporter_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False)
 

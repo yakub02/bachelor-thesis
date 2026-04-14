@@ -12,6 +12,7 @@ from typing import Optional
 from app import db, limiter
 from app.api.admin import admin_bp
 from app.models import User, Event, FeaturedEvent
+from app.models.forum import ForumCategory
 from app.utils.decorators import admin_required, moderator_required
 
 
@@ -477,3 +478,32 @@ def get_system_stats():
             'featured': Event.query.filter_by(is_featured=True).count(),
         }
     })
+
+
+# =============================================================================
+# FORUM CATEGORY MANAGEMENT
+# =============================================================================
+
+@admin_bp.route('/forum/categories', methods=['POST'])
+@jwt_required()
+@admin_required
+@limiter.limit('20/minute')
+def create_forum_category():
+    """Create a forum category (admin only)."""
+    data = request.get_json() or {}
+    name = data.get('name', '').strip()
+    slug = data.get('slug', '').strip()
+    description = data.get('description', '').strip() or None
+
+    if not name or not slug:
+        return jsonify({'error': 'name and slug are required'}), 400
+
+    existing = ForumCategory.query.filter_by(slug=slug).first()
+    if existing:
+        return jsonify({'category': existing.to_dict(), 'message': 'Category already exists'}), 200
+
+    category = ForumCategory(name=name, slug=slug, description=description)
+    db.session.add(category)
+    db.session.commit()
+
+    return jsonify({'category': category.to_dict(), 'message': 'Category created'}), 201

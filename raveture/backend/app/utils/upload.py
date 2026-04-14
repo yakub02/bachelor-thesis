@@ -4,7 +4,7 @@ Handles image upload, validation, and storage.
 """
 
 import os
-import uuid
+import uuid7
 import hashlib
 from datetime import datetime
 from typing import Tuple, Optional
@@ -43,7 +43,7 @@ def generate_unique_filename(original_filename: str) -> str:
     """
     ext = get_file_extension(original_filename)
     timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
-    unique_id = uuid.uuid4().hex[:8]
+    unique_id = uuid7.uuid7().hex[:8]
     return f"{timestamp}_{unique_id}.{ext}"
 
 
@@ -54,35 +54,34 @@ def validate_image(file: FileStorage) -> Tuple[bool, Optional[str]]:
     Returns:
         Tuple of (is_valid, error_message)
     """
-    # Check if file exists
+    from io import BytesIO
+
     if not file or not file.filename:
         return False, "No file provided"
 
-    # Check filename
     if not allowed_file(file.filename):
         return False, f"Invalid file type. Allowed: {', '.join(ALLOWED_EXTENSIONS)}"
 
-    # Check file size
-    file.seek(0, 2)  # Seek to end
-    size = file.tell()
-    file.seek(0)  # Reset to beginning
+    # Read all bytes once — PIL will work on a copy, leaving the original stream untouched
+    file.seek(0)
+    raw = file.read()
+    file.seek(0)  # reset for actual save later
 
+    size = len(raw)
     if size > MAX_FILE_SIZE:
         return False, f"File too large. Maximum size: {MAX_FILE_SIZE // (1024*1024)} MB"
-
     if size == 0:
         return False, "File is empty"
 
-    # Validate it's actually an image using PIL
+    # Validate with PIL against in-memory copy — never touches the FileStorage stream again
     try:
-        img = Image.open(file)
-        img.verify()  # Verify it's a valid image
-        file.seek(0)  # Reset after verify
+        buf = BytesIO(raw)
+        img = Image.open(buf)
+        img.verify()
 
-        # Check dimensions
-        img = Image.open(file)
+        buf = BytesIO(raw)
+        img = Image.open(buf)
         width, height = img.size
-        file.seek(0)
 
         if width > MAX_IMAGE_WIDTH or height > MAX_IMAGE_HEIGHT:
             return False, f"Image too large. Maximum: {MAX_IMAGE_WIDTH}x{MAX_IMAGE_HEIGHT}"
@@ -126,9 +125,12 @@ def save_image(file: FileStorage, subfolder: str = 'images') -> Tuple[str, str]:
     target_folder = os.path.join(upload_folder, subfolder)
     os.makedirs(target_folder, exist_ok=True)
 
-    # Save file
+    # Write raw bytes directly — bypass any stream state issues entirely
     filepath = os.path.join(target_folder, filename)
-    file.save(filepath)
+    file.seek(0)
+    raw = file.read()
+    with open(filepath, 'wb') as f:
+        f.write(raw)
 
     # Return relative path for URL
     relative_path = f"{subfolder}/{filename}"

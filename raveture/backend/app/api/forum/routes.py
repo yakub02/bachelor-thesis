@@ -12,6 +12,7 @@ from pydantic import ValidationError
 from app import db, limiter
 from app.api.forum import forum_bp
 from app.models.forum import ForumCategory, ForumThread, ForumPost, ForumReaction, ForumReport
+from app.models.user import User
 from app.utils.security import generate_slug
 from app.utils.validators import ForumThreadCreate, ForumPostCreate
 
@@ -94,6 +95,8 @@ def create_thread():
         author_id=user_id,
         title=data.title,
         slug=slug,
+        subtitle=data.subtitle,
+        cover_image_url=data.cover_image_url,
         preview_content=data.content[:500] if len(data.content) > 500 else data.content,
         last_post_at=datetime.utcnow(),
         last_post_by=user_id,
@@ -154,6 +157,69 @@ def get_thread(thread_id: str):
         'page': page,
         'pages': posts.pages,
     })
+
+
+@forum_bp.route('/threads/<thread_id>', methods=['DELETE'])
+@jwt_required()
+@limiter.limit('10/minute')
+def delete_thread(thread_id: str):
+    """Delete a thread (author, admin, or moderator only)."""
+    user_id = get_jwt_identity()
+
+    thread = ForumThread.query.get(thread_id)
+    if not thread or thread.is_hidden:
+        return jsonify({'error': 'Thread not found'}), 404
+
+    user = User.query.get(user_id)
+    if str(thread.author_id) != user_id and (not user or user.role not in ('admin', 'moderator')):
+        return jsonify({'error': 'Not authorized'}), 403
+
+    # Soft-delete
+    thread.is_hidden = True
+    thread.category.thread_count = max(0, thread.category.thread_count - 1)
+    db.session.commit()
+
+    return jsonify({'message': 'Thread deleted', 'thread_id': thread_id})
+
+
+@forum_bp.route('/threads/<thread_id>', methods=['PUT'])
+@jwt_required()
+@limiter.limit('10/minute')
+def update_thread(thread_id: str):
+    """Update a thread title and first post content (author, admin, or moderator)."""
+    user_id = get_jwt_identity()
+
+    thread = ForumThread.query.get(thread_id)
+    if not thread or thread.is_hidden:
+        return jsonify({'error': 'Thread not found'}), 404
+
+    user = User.query.get(user_id)
+    if str(thread.author_id) != user_id and (not user or user.role not in ('admin', 'moderator')):
+        return jsonify({'error': 'Not authorized'}), 403
+
+    data = request.get_json() or {}
+    title = (data.get('title') or '').strip()
+    content = (data.get('content') or '').strip()
+
+    if title and len(title) >= 5:
+        thread.title = title
+    subtitle = (data.get('subtitle') or '').strip() or None
+    cover_image_url = (data.get('cover_image_url') or '').strip() or None
+    if subtitle is not None:
+        thread.subtitle = subtitle
+    if cover_image_url is not None:
+        thread.cover_image_url = cover_image_url
+    if content and len(content) >= 10:
+        thread.preview_content = content[:500]
+        first_post = ForumPost.query.filter_by(thread_id=thread_id)\
+            .order_by(ForumPost.created_at).first()
+        if first_post:
+            first_post.content = content
+            first_post.is_edited = True
+            first_post.edited_at = datetime.utcnow()
+
+    db.session.commit()
+    return jsonify({'message': 'Thread updated', 'thread': thread.to_dict()})
 
 
 @forum_bp.route('/threads/<thread_id>/posts', methods=['POST'])

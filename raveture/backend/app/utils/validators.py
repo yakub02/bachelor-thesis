@@ -183,6 +183,8 @@ class ForumThreadCreate(BaseModel):
     title: str = Field(min_length=5, max_length=200)
     content: str = Field(min_length=10, max_length=50000)
     category_id: str
+    subtitle: Optional[str] = Field(default=None, max_length=300)
+    cover_image_url: Optional[str] = Field(default=None, max_length=500)
 
 
 class ForumPostCreate(BaseModel):
