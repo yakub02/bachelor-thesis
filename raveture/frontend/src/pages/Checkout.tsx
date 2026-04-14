@@ -6,6 +6,7 @@ import { ticketingApi } from '@/services'
 import type { Order, ApiError } from '@/types'
 import { AnimatedBackground, GlowButton, GlowCard, NewNavbar, NewFooter } from '@/components/design'
 import { cn } from '@/utils'
+import { useAuth } from '@/context'
 
 function formatError(err: unknown): ApiError {
   if (err instanceof TypeError && err.message.includes('Failed to fetch')) {
@@ -33,6 +34,7 @@ export function Checkout() {
   const location = useLocation()
   const navigate = useNavigate()
   const state = location.state as CheckoutState | null
+  const { user } = useAuth()
 
   const [timeLeft, setTimeLeft] = useState(state?.expiresInSeconds || 0)
   const [confirmLoading, setConfirmLoading] = useState(false)
@@ -112,6 +114,7 @@ export function Checkout() {
         await ticketingApi.confirmOrder(order.id, {
           payment_method: 'card',
           payment_reference: `sim_${Date.now()}`,
+          email: user?.email,
         })
 
         // Navigate to my tickets on success

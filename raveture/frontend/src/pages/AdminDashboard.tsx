@@ -15,7 +15,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/context'
 import { ravetureApi } from '@/services'
-import type { UserProfile as UserProfileType } from '@/services/ravetureApi'
+import type { UserProfile as UserProfileType, Pick } from '@/services/ravetureApi'
 import { AnimatedBackground, GlowButton, GlowCard, GlowInput, NewNavbar, NewFooter } from '@/components/design'
 
 interface SystemStats {
@@ -43,6 +43,15 @@ export function AdminDashboard() {
   const [roleFilter, setRoleFilter] = useState<string>('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const [picks, setPicks] = useState<Pick[]>([])
+  const [picksLoading, setPicksLoading] = useState(false)
+  const [publishedEvents, setPublishedEvents] = useState<any[]>([])
+  const [pickEventId, setPickEventId] = useState('')
+  const [pickReason, setPickReason] = useState('')
+  const [pickExpiresAt, setPickExpiresAt] = useState('')
+  const [pickError, setPickError] = useState('')
+  const [pickSuccess, setPickSuccess] = useState('')
 
   // Check if user is admin
   useEffect(() => {
@@ -79,6 +88,19 @@ export function AdminDashboard() {
 
     fetchData()
   }, [activeTab, search, roleFilter, user])
+
+  useEffect(() => {
+    if (activeTab === 'picks') {
+      setPicksLoading(true)
+      Promise.all([
+        ravetureApi.getPicks(),
+        ravetureApi.getEvents({ status: 'published', per_page: 100 }),
+      ]).then(([picksData, eventsData]) => {
+        setPicks(picksData.featured_events)
+        setPublishedEvents(eventsData.events)
+      }).catch(() => {}).finally(() => setPicksLoading(false))
+    }
+  }, [activeTab])
 
   useGSAP(() => {
     if (loading) return
@@ -128,6 +150,37 @@ export function AdminDashboard() {
       setUsers(response.users)
     } catch (err: any) {
       alert(err.message || 'Failed to unban user')
+    }
+  }
+
+  async function handleCreatePick() {
+    if (!pickEventId || !pickReason.trim()) {
+      setPickError('Event a reason jsou povinné')
+      return
+    }
+    try {
+      await ravetureApi.createPick({
+        event_id: pickEventId,
+        reason: pickReason.trim(),
+        expires_at: pickExpiresAt || undefined,
+      })
+      setPickSuccess('RT Pick přidán!')
+      setPickEventId(''); setPickReason(''); setPickExpiresAt('')
+      const data = await ravetureApi.getPicks()
+      setPicks(data.featured_events)
+      setPickError('')
+    } catch (e: any) {
+      setPickError(e.message || 'Chyba při přidávání')
+      setPickSuccess('')
+    }
+  }
+
+  async function handleRemovePick(eventId: string) {
+    try {
+      await ravetureApi.removePick(eventId)
+      setPicks(prev => prev.filter(p => p.event_id !== eventId))
+    } catch (e: any) {
+      setPickError(e.message || 'Chyba při odebírání')
     }
   }
 
@@ -381,18 +434,85 @@ export function AdminDashboard() {
             </div>
           )}
 
-          {!loading && activeTab === 'picks' && (
-            <div>
-              <GlowCard className="p-8 text-center admin-card">
-                <Star className="w-16 h-16 text-primary mx-auto mb-4" />
-                <h3 className="text-xl font-bold mb-2">RAVETURE Picks Management</h3>
-                <p className="text-text-muted mb-6">
-                  Feature events as curated RAVETURE Picks from event pages
-                </p>
-                <Link to="/events">
-                  <GlowButton>Browse Events</GlowButton>
-                </Link>
-              </GlowCard>
+          {activeTab === 'picks' && (
+            <div className="space-y-8">
+              {/* Add Pick Form */}
+              <div className="bg-surface border border-border p-6">
+                <h3 className="text-white font-black uppercase text-sm mb-4">PŘIDAT RT PICK</h3>
+                {pickError && <p className="text-red-400 text-xs mb-3">{pickError}</p>}
+                {pickSuccess && <p className="text-green-400 text-xs mb-3">{pickSuccess}</p>}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-text-muted text-xs uppercase tracking-widest block mb-1">Event</label>
+                    <select
+                      value={pickEventId}
+                      onChange={e => setPickEventId(e.target.value)}
+                      className="w-full bg-bg-dark border border-border text-white text-sm px-3 py-2 focus:outline-none focus:border-accent"
+                    >
+                      <option value="">Vyber event...</option>
+                      {publishedEvents.map(ev => (
+                        <option key={ev.id} value={ev.id}>{ev.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-text-muted text-xs uppercase tracking-widest block mb-1">Platnost do (volitelné)</label>
+                    <input
+                      type="datetime-local"
+                      value={pickExpiresAt}
+                      onChange={e => setPickExpiresAt(e.target.value)}
+                      className="w-full bg-bg-dark border border-border text-white text-sm px-3 py-2 focus:outline-none focus:border-accent"
+                    />
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <label className="text-text-muted text-xs uppercase tracking-widest block mb-1">Reason (proč to vybíráme)</label>
+                  <textarea
+                    value={pickReason}
+                    onChange={e => setPickReason(e.target.value)}
+                    rows={3}
+                    placeholder="Proč je tato akce RT Pick..."
+                    className="w-full bg-bg-dark border border-border text-white text-sm px-3 py-2 focus:outline-none focus:border-accent resize-none"
+                  />
+                </div>
+                <button
+                  onClick={handleCreatePick}
+                  className="mt-4 bg-accent text-black font-black uppercase text-xs px-6 py-2 hover:bg-accent/80 transition-colors"
+                >
+                  ◆ PŘIDAT RT PICK
+                </button>
+              </div>
+
+              {/* Current Picks Table */}
+              <div>
+                <h3 className="text-white font-black uppercase text-sm mb-4">AKTUÁLNÍ RT PICKS ({picks.length})</h3>
+                {picksLoading ? (
+                  <p className="text-text-muted text-sm">Načítám...</p>
+                ) : picks.length === 0 ? (
+                  <p className="text-text-muted text-sm">Žádné RT Picks</p>
+                ) : (
+                  <div className="space-y-2">
+                    {picks.map(pick => (
+                      <div key={pick.id} className="bg-surface border border-border p-4 flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white font-bold text-sm truncate">{pick.event.name}</p>
+                          <p className="text-text-muted text-xs mt-1 line-clamp-2">{pick.reason}</p>
+                          <p className="text-text-muted text-xs mt-1">
+                            Kurátor: {pick.curator?.display_name || pick.curator?.username || '—'} ·{' '}
+                            {new Date(pick.featured_at).toLocaleDateString('cs-CZ')}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => handleRemovePick(pick.event_id)}
+                          className="flex-none bg-red-900/30 border border-red-700 text-red-400 text-xs font-black uppercase px-3 py-1 hover:bg-red-900/60 transition-colors"
+                        >
+                          REMOVE
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

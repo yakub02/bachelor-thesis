@@ -184,6 +184,9 @@ class TicketingApiService {
     event_id: string
     items: Array<{ ticket_type_id: string; quantity: number }>
     discount_code?: string
+    event_name?: string
+    event_date?: string
+    event_venue?: string
   }) {
     return this.request<{
       order: import('@/types').Order
@@ -215,7 +218,7 @@ class TicketingApiService {
     )
   }
 
-  async confirmOrder(orderId: string, data?: { payment_method?: string; payment_reference?: string }) {
+  async confirmOrder(orderId: string, data?: { payment_method?: string; payment_reference?: string; email?: string }) {
     return this.request<{
       message: string
       order: import('@/types').Order

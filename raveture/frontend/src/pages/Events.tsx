@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
@@ -238,7 +238,6 @@ function getDateForTimeFilter(filterId: string): string | null {
 }
 
 export function Events() {
-  const [searchParams, setSearchParams] = useSearchParams()
   const [events, setEvents] = useState<Event[]>([])
   const [totalEvents, setTotalEvents] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
@@ -408,11 +407,7 @@ export function Events() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <div className="inline-block px-4 py-2 bg-primary/10 border border-primary/30 mb-4">
-              <span className="text-primary text-xs font-mono uppercase tracking-wider">
-                🔥 Backend Filtering • Optimized
-              </span>
-            </div>
+            
             <h1 className="text-6xl md:text-7xl font-black uppercase tracking-tighter mb-4">
               All <span className="text-primary">Events</span>
             </h1>
@@ -505,7 +500,7 @@ export function Events() {
                   <div className="mb-8">
                     <h3 className="text-sm font-bold uppercase mb-4 flex items-center gap-2">
                       <span className="text-primary">◆</span>
-                      Where (Backend filtered)
+                      Where
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* Country */}
@@ -557,7 +552,7 @@ export function Events() {
                   <div className="mb-6">
                     <h3 className="text-sm font-bold uppercase mb-4 flex items-center gap-2">
                       <span className="text-primary">◆</span>
-                      Genre (Backend filtered)
+                      Genre
                     </h3>
                     <select
                       value={selectedGenre}

@@ -4,14 +4,16 @@ import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { AnimatedBackground, NewNavbar, NewFooter, GlowButton, GlowCard } from '@/components/design'
-import { features, platformModules } from '@/data'
+import { features } from '@/data'
 import { ravetureApi, type Event } from '@/services/ravetureApi'
+import { RavePicks } from '@/components/home/RavePicks'
 
 gsap.registerPlugin(ScrollTrigger)
 
 export function Home() {
   const [isLoading, setIsLoading] = useState(true)
   const [events, setEvents] = useState<Event[]>([])
+  const [latestArticle, setLatestArticle] = useState<any>(null)
   const heroRef = useRef<HTMLDivElement>(null)
   const sectionsRef = useRef<HTMLElement[]>([])
 
@@ -34,6 +36,13 @@ export function Home() {
       }
     }
     fetchEvents()
+  }, [])
+
+  // Fetch latest article
+  useEffect(() => {
+    ravetureApi.getForumThreads('editorial', 1)
+      .then(d => { if (d.threads.length > 0) setLatestArticle(d.threads[0]) })
+      .catch(() => {})
   }, [])
 
   // Hero entrance animation
@@ -314,42 +323,84 @@ export function Home() {
         </div>
       </section>
 
-      {/* PLATFORM MODULES */}
-      <section
-        ref={(el) => el && (sectionsRef.current[2] = el)}
-        className="relative py-32 border-y border-border-grey bg-graphite/30"
-      >
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-20 scroll-item">
-            <div className="inline-block px-4 py-2 bg-primary/10 border border-primary/30 mb-4">
-              <span className="text-primary text-xs font-mono uppercase tracking-wider">Ecosystem</span>
-            </div>
-            <h2 className="text-5xl md:text-6xl font-black uppercase tracking-tighter mb-4">
-              Platform <span className="text-primary">Modules</span>
-            </h2>
-          </div>
+      <RavePicks />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {platformModules.map((module, i) => (
-              <GlowCard
-                key={module.number}
-                className="scroll-item p-8 hover:scale-[1.02] transition-all duration-300 group cursor-pointer"
-                style={{ animationDelay: `${i * 100}ms` }}
+      {/* LATEST ARTICLE */}
+      {latestArticle && (
+        <section
+          ref={(el) => el && (sectionsRef.current[2] = el)}
+          className="relative py-24 border-t border-border-grey"
+        >
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="flex items-end justify-between mb-10 scroll-item">
+              <div>
+                <span className="bg-primary text-black text-xs font-black px-2 py-1 uppercase tracking-widest">
+                  Magazine
+                </span>
+                <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter text-white mt-3">
+                  Latest <span className="text-primary">Article</span>
+                </h2>
+              </div>
+              <Link
+                to="/magazine"
+                className="hidden md:block text-text-muted hover:text-primary text-xs uppercase tracking-widest transition-colors"
               >
-                <div className="text-5xl font-black text-primary/20 mb-4 group-hover:text-primary/40 transition-colors">
-                  {module.number}
+                All Articles →
+              </Link>
+            </div>
+
+            <Link to={`/magazine/articles/${latestArticle.id}`} className="scroll-item block group">
+              <div className="grid md:grid-cols-2 gap-0 border border-border-grey hover:border-primary transition-colors duration-300">
+                {/* Image */}
+                <div className="relative overflow-hidden">
+                  {latestArticle.cover_image_url ? (
+                    <img
+                      src={latestArticle.cover_image_url}
+                      alt={latestArticle.title}
+                      className="w-full h-64 md:h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+                    />
+                  ) : (
+                    <div className="w-full h-64 md:h-full min-h-[280px] bg-graphite flex items-center justify-center">
+                      <span className="text-primary text-7xl font-black opacity-20">◆</span>
+                    </div>
+                  )}
                 </div>
-                <h3 className="text-xl font-bold uppercase mb-3 tracking-tight group-hover:text-primary transition-colors">
-                  {module.title}
-                </h3>
-                <p className="text-text-muted text-sm leading-relaxed">
-                  {module.description}
-                </p>
-              </GlowCard>
-            ))}
+
+                {/* Text */}
+                <div className="p-8 md:p-12 flex flex-col justify-between bg-graphite/30">
+                  <div>
+                    <span className="text-primary text-xs font-black uppercase tracking-widest">Editorial</span>
+                    <h3 className="text-2xl md:text-3xl font-black uppercase tracking-tighter text-white mt-3 leading-tight group-hover:text-primary transition-colors">
+                      {latestArticle.title}
+                    </h3>
+                    {latestArticle.subtitle && (
+                      <p className="text-text-muted text-sm mt-3 leading-relaxed line-clamp-3">
+                        {latestArticle.subtitle}
+                      </p>
+                    )}
+                    {!latestArticle.subtitle && latestArticle.preview_content && (
+                      <p className="text-text-muted text-sm mt-3 leading-relaxed line-clamp-3">
+                        {latestArticle.preview_content}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between mt-8 pt-6 border-t border-border-grey">
+                    <span className="text-text-muted text-xs uppercase tracking-widest">
+                      {new Date(latestArticle.created_at).toLocaleDateString('en-US', {
+                        day: 'numeric', month: 'long', year: 'numeric'
+                      })}
+                    </span>
+                    <span className="text-primary text-xs font-black uppercase tracking-widest group-hover:translate-x-1 transition-transform inline-block">
+                      Read →
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </Link>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* CTA FINAL */}
       <section className="relative py-32">

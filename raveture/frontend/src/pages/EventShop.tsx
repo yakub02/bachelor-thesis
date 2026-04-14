@@ -238,7 +238,7 @@ function ResaleListingRow({
 export function EventShop() {
   const { eventId } = useParams<{ eventId: string }>()
   const navigate = useNavigate()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
   const contentRef = useRef<HTMLDivElement>(null)
 
   const [event, setEvent] = useState<Event | null>(null)
@@ -264,6 +264,11 @@ export function EventShop() {
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
   const [buyingId, setBuyingId] = useState<string | null>(null)
   const [buyError, setBuyError] = useState<string | null>(null)
+
+  const [isRTPick, setIsRTPick] = useState(false)
+  const [pickModalOpen, setPickModalOpen] = useState(false)
+  const [quickPickReason, setQuickPickReason] = useState('')
+  const [pickActionLoading, setPickActionLoading] = useState(false)
 
   useEffect(() => {
     if (!eventId) return
@@ -296,6 +301,12 @@ export function EventShop() {
       .catch(() => { /* silent fail */ })
       .finally(() => setResaleLoading(false))
   }, [event])
+
+  useEffect(() => {
+    if (user?.role === 'admin' && event) {
+      ravetureApi.checkPick(event.id).then(setIsRTPick).catch(() => {})
+    }
+  }, [user, event])
 
   useGSAP(() => {
     if (eventLoading || loading) return
@@ -360,7 +371,12 @@ export function EventShop() {
         .filter(([, q]) => q > 0)
         .map(([id, quantity]) => ({ ticket_type_id: id, quantity }))
       const data = await ticketingApi.createOrder({
-        event_id: event.id, items, discount_code: appliedDiscount?.code,
+        event_id: event.id,
+        items,
+        discount_code: appliedDiscount?.code,
+        event_name: event.name,
+        event_date: event.starts_at,
+        event_venue: event.venue?.name || undefined,
       })
       navigate('/checkout', {
         state: { order: data.order, expiresInSeconds: data.expires_in_seconds, eventName: event.name, discount: data.discount },
@@ -369,6 +385,34 @@ export function EventShop() {
       setOrderError(formatError(err))
     } finally {
       setOrderLoading(false)
+    }
+  }
+
+  async function handleMakePick() {
+    if (!event || !quickPickReason.trim()) return
+    setPickActionLoading(true)
+    try {
+      await ravetureApi.createPick({ event_id: event.id, reason: quickPickReason.trim() })
+      setIsRTPick(true)
+      setPickModalOpen(false)
+      setQuickPickReason('')
+    } catch (e: any) {
+      alert(e.message || 'Chyba')
+    } finally {
+      setPickActionLoading(false)
+    }
+  }
+
+  async function handleRemovePickQuick() {
+    if (!event) return
+    setPickActionLoading(true)
+    try {
+      await ravetureApi.removePick(event.id)
+      setIsRTPick(false)
+    } catch (e: any) {
+      alert(e.message || 'Chyba')
+    } finally {
+      setPickActionLoading(false)
     }
   }
 
@@ -496,6 +540,61 @@ export function EventShop() {
 
               {event.short_description && (
                 <p className="text-text-muted text-sm leading-relaxed max-w-2xl">{event.short_description}</p>
+              )}
+
+              {user?.role === 'admin' && (
+                <div className="mt-2">
+                  {isRTPick ? (
+                    <button
+                      onClick={handleRemovePickQuick}
+                      disabled={pickActionLoading}
+                      className="text-xs font-black uppercase bg-red-900/30 border border-red-700 text-red-400 px-3 py-1 hover:bg-red-900/60 transition-colors disabled:opacity-50"
+                    >
+                      ◆ REMOVE RT PICK
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setPickModalOpen(true)}
+                      className="text-xs font-black uppercase bg-accent/10 border border-accent text-accent px-3 py-1 hover:bg-accent/20 transition-colors"
+                    >
+                      ◆ MAKE RT PICK
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Quick-pick modal */}
+              {pickModalOpen && (
+                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+                  <div className="bg-surface border border-border p-6 w-full max-w-md">
+                    <h3 className="text-white font-black uppercase text-sm mb-4">PŘIDAT RT PICK</h3>
+                    <p className="text-text-muted text-xs mb-1 uppercase tracking-widest">Event</p>
+                    <p className="text-white font-bold text-sm mb-4">{event?.name}</p>
+                    <label className="text-text-muted text-xs uppercase tracking-widest block mb-1">Reason</label>
+                    <textarea
+                      value={quickPickReason}
+                      onChange={e => setQuickPickReason(e.target.value)}
+                      rows={4}
+                      placeholder="Proč je tato akce RT Pick..."
+                      className="w-full bg-bg-dark border border-border text-white text-sm px-3 py-2 focus:outline-none focus:border-accent resize-none mb-4"
+                    />
+                    <div className="flex gap-3">
+                      <button
+                        onClick={handleMakePick}
+                        disabled={pickActionLoading || !quickPickReason.trim()}
+                        className="bg-accent text-black font-black uppercase text-xs px-6 py-2 hover:bg-accent/80 transition-colors disabled:opacity-50"
+                      >
+                        {pickActionLoading ? '...' : 'POTVRDIT'}
+                      </button>
+                      <button
+                        onClick={() => setPickModalOpen(false)}
+                        className="border border-border text-text-muted font-black uppercase text-xs px-6 py-2 hover:text-white transition-colors"
+                      >
+                        ZRUŠIT
+                      </button>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
 

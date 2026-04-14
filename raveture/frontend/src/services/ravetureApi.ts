@@ -100,6 +100,22 @@ export interface Venue {
   longitude: number | null
 }
 
+export interface Pick {
+  id: string
+  event_id: string
+  reason: string
+  featured_at: string
+  expires_at: string | null
+  curator: {
+    id: string
+    display_name: string | null
+    username: string
+    avatar_url: string | null
+    role: string
+  } | null
+  event: Event
+}
+
 class RavetureApiService {
   private accessToken: string | null = null
   private refreshToken: string | null = null
@@ -558,6 +574,161 @@ class RavetureApiService {
     return this.request(`/api/v1/admin/featured-events/${eventId}`, {
       method: 'DELETE'
     })
+  }
+
+  async getPicks(): Promise<{ featured_events: Pick[]; count: number }> {
+    return this.request<{ featured_events: Pick[]; count: number }>(
+      '/api/v1/admin/featured-events'
+    )
+  }
+
+  async createPick(data: {
+    event_id: string
+    reason: string
+    expires_at?: string
+  }): Promise<{ message: string; featured_event: Pick }> {
+    return this.request<{ message: string; featured_event: Pick }>(
+      '/api/v1/admin/featured-events',
+      { method: 'POST', body: data }
+    )
+  }
+
+  async removePick(event_id: string): Promise<{ message: string; event_id: string }> {
+    return this.request<{ message: string; event_id: string }>(
+      `/api/v1/admin/featured-events/${event_id}`,
+      { method: 'DELETE' }
+    )
+  }
+
+  async checkPick(event_id: string): Promise<boolean> {
+    try {
+      const { featured_events } = await this.getPicks()
+      return featured_events.some(p => p.event_id === event_id)
+    } catch {
+      return false
+    }
+  }
+
+  async getMedia(params: {
+    type?: string
+    sort?: string
+    page?: number
+    per_page?: number
+    genre?: string
+  }): Promise<{ media: any[]; total: number; page: number; pages: number }> {
+    const qs = new URLSearchParams()
+    if (params.type) qs.set('type', params.type)
+    if (params.sort) qs.set('sort', params.sort)
+    if (params.page) qs.set('page', String(params.page))
+    if (params.per_page) qs.set('per_page', String(params.per_page))
+    if (params.genre) qs.set('genre', params.genre)
+    return this.request<{ media: any[]; total: number; page: number; pages: number }>(
+      `/api/v1/media/?${qs.toString()}`
+    )
+  }
+
+  async getForumThreads(categorySlug: string, page = 1): Promise<{
+    category: any
+    threads: any[]
+    total: number
+    page: number
+    pages: number
+  }> {
+    return this.request<{
+      category: any
+      threads: any[]
+      total: number
+      page: number
+      pages: number
+    }>(`/api/v1/forum/categories/${categorySlug}/threads?page=${page}&per_page=20`)
+  }
+
+  async getForumCategory(slug: string): Promise<{ id: string; name: string; slug: string }> {
+    const response = await this.request<{ category: { id: string; name: string; slug: string } }>(
+      `/api/v1/forum/categories/${slug}`,
+      { skipAuth: true }
+    )
+    return response.category
+  }
+
+  async createForumCategory(data: {
+    name: string
+    slug: string
+    description?: string
+  }): Promise<{ category: { id: string; name: string; slug: string } }> {
+    return this.request<{ category: { id: string; name: string; slug: string } }>(
+      '/api/v1/admin/forum/categories',
+      { method: 'POST', body: data }
+    )
+  }
+
+  async uploadImage(file: File, category = 'images'): Promise<{ url: string }> {
+    const form = new FormData()
+    form.append('file', file)
+    form.append('category', category)
+    const headers: Record<string, string> = {}
+    if (this.accessToken) headers['Authorization'] = `Bearer ${this.accessToken}`
+    const res = await fetch(`${API_BASE_URL}/api/v1/upload/image`, {
+      method: 'POST',
+      headers,
+      body: form,
+    })
+    const data = await res.json()
+    if (!res.ok) throw data
+    return data
+  }
+
+  async createForumThread(data: {
+    category_id: string
+    title: string
+    content: string
+    subtitle?: string
+    cover_image_url?: string
+  }): Promise<{ thread: any }> {
+    return this.request<{ thread: any }>('/api/v1/forum/threads', {
+      method: 'POST',
+      body: data,
+    })
+  }
+
+  async getForumThread(threadId: string): Promise<{ thread: any; posts: any[] }> {
+    return this.request<{ thread: any; posts: any[] }>(
+      `/api/v1/forum/threads/${threadId}`,
+      { skipAuth: true }
+    )
+  }
+
+  async deleteForumThread(threadId: string): Promise<{ message: string }> {
+    return this.request<{ message: string }>(`/api/v1/forum/threads/${threadId}`, { method: 'DELETE' })
+  }
+
+  async updateForumThread(threadId: string, data: { title: string; content: string; subtitle?: string; cover_image_url?: string }): Promise<{ thread: any }> {
+    return this.request<{ thread: any }>(`/api/v1/forum/threads/${threadId}`, {
+      method: 'PUT',
+      body: data,
+    })
+  }
+
+  async getArchiveTimeline(): Promise<{ timeline: Array<{ year: number; count: number }> }> {
+    return this.request<{ timeline: Array<{ year: number; count: number }> }>(
+      '/api/v1/archive/timeline'
+    )
+  }
+
+  async getArchivedEvents(params: {
+    year?: number
+    page?: number
+    per_page?: number
+    q?: string
+  }): Promise<{ events: any[]; total: number; page: number; pages: number }> {
+    const qs = new URLSearchParams()
+    if (params.year) qs.set('year', String(params.year))
+    if (params.page) qs.set('page', String(params.page))
+    if (params.per_page) qs.set('per_page', String(params.per_page))
+    if (params.q) qs.set('q', params.q)
+    return this.request<{ events: any[]; total: number; page: number; pages: number }>(
+      `/api/v1/archive/?${qs.toString()}`
+    )
   }
 
   async getSystemStats(): Promise<{

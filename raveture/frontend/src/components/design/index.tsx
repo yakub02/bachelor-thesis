@@ -356,6 +356,7 @@ interface NewNavbarProps {
 }
 
 const NAV_LINKS = [
+  { label: 'Magazine', to: '/magazine' },
   { label: 'Events', to: '/events' },
 ]
 
