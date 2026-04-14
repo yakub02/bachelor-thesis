@@ -16,6 +16,7 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_mail import Mail
 from flasgger import Swagger
 
 from app.config import config
@@ -27,6 +28,7 @@ from app.config import config
 db = SQLAlchemy()
 migrate = Migrate()
 jwt = JWTManager()
+mail = Mail()
 
 # Rate limiter - key function determines how to identify users
 def get_rate_limit_key():
@@ -83,6 +85,7 @@ def create_app(config_name='default'):
     migrate.init_app(app, db)
     jwt.init_app(app)
     limiter.init_app(app)
+    mail.init_app(app)
     
     # CORS - strict in production
     if config_name == 'production':
@@ -185,7 +188,12 @@ def create_app(config_name='default'):
         response.headers['X-Frame-Options'] = 'DENY'
         response.headers['X-XSS-Protection'] = '1; mode=block'
         response.headers['X-Request-ID'] = g.get('request_id', 'unknown')
-        
+
+        # HSTS — vynutí HTTPS v produkci (nezapnout v developmentu)
+        if app.config.get('PREFERRED_URL_SCHEME') == 'https':
+            max_age = app.config.get('HSTS_MAX_AGE', 31536000)
+            response.headers['Strict-Transport-Security'] = f'max-age={max_age}; includeSubDomains'
+
         # Remove server header (don't expose Flask version)
         response.headers.pop('Server', None)
         

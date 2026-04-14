@@ -51,6 +51,14 @@ class Config:
     ORDER_EXPIRATION_MINUTES = 15
     MAX_ITEMS_PER_ORDER = 10
 
+    # Flask-Mail
+    MAIL_SERVER = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
+    MAIL_PORT = int(os.getenv('MAIL_PORT', 587))
+    MAIL_USE_TLS = True
+    MAIL_USERNAME = os.getenv('MAIL_USERNAME')
+    MAIL_PASSWORD = os.getenv('MAIL_PASSWORD')
+    MAIL_DEFAULT_SENDER = os.getenv('MAIL_DEFAULT_SENDER', 'noreply@raveture.cz')
+
     # GoPay Payment Gateway
     GOPAY_CLIENT_ID = os.getenv('GOPAY_CLIENT_ID')
     GOPAY_CLIENT_SECRET = os.getenv('GOPAY_CLIENT_SECRET')
@@ -75,9 +83,19 @@ class DevelopmentConfig(Config):
 class ProductionConfig(Config):
     """Production - full security."""
     DEBUG = False
-    
+
     # Stricter rate limits in production
     RATELIMIT_DEFAULT = "60 per minute"
+
+    # TLS — cesty k certifikátu a klíči (nastavit v prostředí)
+    TLS_CERT_FILE = os.getenv('TLS_CERT_FILE')  # např. /etc/ssl/certs/raveture.crt
+    TLS_KEY_FILE = os.getenv('TLS_KEY_FILE')    # např. /etc/ssl/private/raveture.key
+
+    # Vynutit HTTPS schéma pro generování URL
+    PREFERRED_URL_SCHEME = 'https'
+
+    # HSTS — informuje prohlížeče, že web běží výhradně přes HTTPS
+    HSTS_MAX_AGE = 31536000  # 1 rok v sekundách
 
 
 class TestingConfig(Config):

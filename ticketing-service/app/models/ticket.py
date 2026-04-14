@@ -4,6 +4,7 @@ Security-first design with audit logging and proper constraints.
 """
 
 import uuid
+import uuid7
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -48,7 +49,7 @@ class TicketType(db.Model):
         Index('idx_ticket_types_event_status', 'event_id', 'is_active'),
     )
     
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
     event_id = db.Column(UUID(as_uuid=True), nullable=False, index=True)
     
     name = db.Column(db.String(100), nullable=False)
@@ -156,7 +157,7 @@ class Ticket(db.Model):
         Index('idx_tickets_order', 'order_id'),
     )
     
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
     ticket_type_id = db.Column(
         UUID(as_uuid=True), 
         db.ForeignKey('ticket_types.id', ondelete='RESTRICT'),
@@ -281,7 +282,7 @@ class Order(db.Model):
         Index('idx_orders_expires', 'expires_at', postgresql_where=db.text("status = 'pending'")),
     )
     
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
     reference = db.Column(db.String(30), unique=True, nullable=False)  # Human-readable
     
     user_id = db.Column(UUID(as_uuid=True), nullable=False, index=True)
@@ -315,7 +316,12 @@ class Order(db.Model):
     # IP tracking for fraud prevention
     ip_address = db.Column(db.String(45))  # IPv6 max length
     user_agent_hash = db.Column(db.String(64))  # SHA-256 of user agent
-    
+
+    # Event data (denormalized at order creation time)
+    event_name = db.Column(db.String(200))
+    event_date = db.Column(db.DateTime(timezone=True))
+    event_venue = db.Column(db.String(300))
+
     # Relationships
     items = db.relationship('OrderItem', back_populates='order', lazy='dynamic')
     tickets = db.relationship('Ticket', back_populates='order', lazy='dynamic')
@@ -371,7 +377,7 @@ class OrderItem(db.Model):
         CheckConstraint('unit_price_cents >= 0', name='check_unit_price_positive'),
     )
     
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
     order_id = db.Column(
         UUID(as_uuid=True),
         db.ForeignKey('orders.id', ondelete='CASCADE'),
@@ -429,7 +435,7 @@ class ResaleListing(db.Model):
         Index('idx_resale_active_event', 'event_id', postgresql_where=db.text("status = 'active'")),
     )
     
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
     ticket_id = db.Column(
         UUID(as_uuid=True),
         db.ForeignKey('tickets.id', ondelete='CASCADE'),
@@ -492,7 +498,7 @@ class Validation(db.Model):
         Index('idx_validations_ticket', 'ticket_id'),
     )
     
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
     
     ticket_id = db.Column(UUID(as_uuid=True), db.ForeignKey('tickets.id'))  # Nullable for not_found
     event_id = db.Column(UUID(as_uuid=True), nullable=False)
@@ -544,7 +550,7 @@ class ApiClient(db.Model):
         ),
     )
     
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
     
     name = db.Column(db.String(100), nullable=False)
     api_key_hash = db.Column(db.String(64), nullable=False, unique=True)
@@ -598,7 +604,7 @@ class AuditLog(db.Model):
         Index('idx_audit_time', 'created_at'),
     )
     
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
     
     # What happened
     action = db.Column(db.String(50), nullable=False)  # e.g., 'ticket.validate', 'order.confirm'
@@ -702,7 +708,7 @@ class DiscountCode(db.Model):
         Index('idx_discount_codes_event', 'event_id'),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
 
     # Code itself - case insensitive, stored uppercase
     code = db.Column(db.String(50), nullable=False, unique=True)
@@ -830,7 +836,7 @@ class DiscountCodeUsage(db.Model):
         Index('idx_discount_usage_order', 'order_id'),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
 
     discount_code_id = db.Column(
         UUID(as_uuid=True),

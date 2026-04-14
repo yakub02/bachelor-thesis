@@ -8,7 +8,7 @@ Security:
 """
 
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from flask import jsonify, request, g, current_app
 from pydantic import ValidationError
@@ -228,10 +228,13 @@ def create_order():
             discount_code_id=discount_code_obj.id if discount_code_obj else None,
             total_cents=total_cents,
             currency='CZK',  # TODO: Make configurable
-            expires_at=datetime.utcnow() + timedelta(minutes=expiration_minutes),
+            expires_at=datetime.now(timezone.utc) + timedelta(minutes=expiration_minutes),
             ip_address=g.get('ip_address'),
             user_agent_hash=g.get('user_agent_hash'),
-            api_client_id=g.get('api_client').id if g.get('api_client') else None
+            api_client_id=g.get('api_client').id if g.get('api_client') else None,
+            event_name=data.event_name,
+            event_date=data.event_date,
+            event_venue=data.event_venue,
         )
         db.session.add(order)
         db.session.flush()  # Get order ID
@@ -401,7 +404,8 @@ def confirm_order(order_id):
     """
     user_id = get_current_user_id()
     data = request.get_json() or {}
-    
+    recipient_email = data.get('email')
+
     try:
         # Lock order row
         order = db.session.execute(
@@ -513,6 +517,11 @@ def confirm_order(order_id):
         db.session.add(audit)
 
         db.session.commit()
+
+        # Send confirmation email (non-blocking — failure doesn't affect response)
+        if recipient_email:
+            from app.services.email_service import send_order_confirmation
+            send_order_confirmation(order, tickets_created, recipient_email)
 
         return jsonify({
             'message': 'Order confirmed successfully',

@@ -30,6 +30,10 @@ class OrderCreate(BaseModel):
     event_id: UUID
     items: List[OrderItemCreate] = Field(min_length=1, max_length=10)
     discount_code: Optional[str] = Field(default=None, max_length=50)
+    # Event data for PDF (denormalized)
+    event_name: Optional[str] = Field(default=None, max_length=200)
+    event_date: Optional[datetime] = None
+    event_venue: Optional[str] = Field(default=None, max_length=300)
 
     @field_validator('items')
     @classmethod

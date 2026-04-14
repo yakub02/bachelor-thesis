@@ -562,19 +562,19 @@ def download_ticket_pdf(ticket_id):
     # This uses a longer-lived signature suitable for printed tickets
     qr_data = f"RAVETURE:{ticket.id}:{ticket_type.event_id}"
 
-    # For now, we use placeholder event info
-    # In production, this would fetch from the main backend
-    from datetime import datetime
-    event_date = datetime.utcnow()  # Placeholder
+    from datetime import datetime, timezone
+    event_name = order.event_name or f"Event {str(ticket_type.event_id)[:8]}"
+    event_date = order.event_date or datetime.now(timezone.utc)
+    event_venue = order.event_venue or "Venue TBD"
 
     # Generate PDF
     pdf_buffer = generate_ticket_pdf(
         ticket_id=str(ticket.id),
         ticket_type_name=ticket_type.name,
         order_reference=order.reference,
-        event_name=f"Event {str(ticket_type.event_id)[:8]}",  # Placeholder
+        event_name=event_name,
         event_date=event_date,
-        event_venue="Venue TBD",  # Placeholder
+        event_venue=event_venue,
         qr_data=qr_data,
         additional_info=(
             "Important: This printed ticket contains a static QR code. "
