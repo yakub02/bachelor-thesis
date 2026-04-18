@@ -9,9 +9,44 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy import Index, CheckConstraint, event
-from sqlalchemy.dialects.postgresql import UUID, ARRAY
+from sqlalchemy import types as sa_types
 
 from app import db
+
+
+class PortableUUID(sa_types.TypeDecorator):
+    """
+    Platform-independent UUID type.
+    Uses PostgreSQL's native UUID on PostgreSQL,
+    CHAR(36) on other databases (e.g., SQLite for testing).
+    Always returns Python uuid.UUID objects.
+    """
+    impl = sa_types.CHAR(36)
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect):
+        if dialect.name == 'postgresql':
+            from sqlalchemy.dialects.postgresql import UUID as PGUUID
+            return dialect.type_descriptor(PGUUID())
+        return dialect.type_descriptor(sa_types.CHAR(36))
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return value
+        if isinstance(value, uuid.UUID):
+            return value if dialect.name == 'postgresql' else str(value)
+        return str(uuid.UUID(str(value)))
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return value
+        if isinstance(value, uuid.UUID):
+            return value
+        return uuid.UUID(str(value))
+
+
+# Alias for brevity
+UUID = PortableUUID
 
 
 # =============================================================================
@@ -49,8 +84,8 @@ class TicketType(db.Model):
         Index('idx_ticket_types_event_status', 'event_id', 'is_active'),
     )
     
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
-    event_id = db.Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = db.Column(UUID(), primary_key=True, default=uuid7.uuid7)
+    event_id = db.Column(UUID(), nullable=False, index=True)
     
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
@@ -157,20 +192,20 @@ class Ticket(db.Model):
         Index('idx_tickets_order', 'order_id'),
     )
     
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
+    id = db.Column(UUID(), primary_key=True, default=uuid7.uuid7)
     ticket_type_id = db.Column(
-        UUID(as_uuid=True), 
+        UUID(), 
         db.ForeignKey('ticket_types.id', ondelete='RESTRICT'),
         nullable=False
     )
     order_id = db.Column(
-        UUID(as_uuid=True),
+        UUID(),
         db.ForeignKey('orders.id', ondelete='RESTRICT'),
         nullable=False
     )
     
-    owner_id = db.Column(UUID(as_uuid=True), nullable=False, index=True)
-    original_owner_id = db.Column(UUID(as_uuid=True), nullable=False)  # First buyer
+    owner_id = db.Column(UUID(), nullable=False, index=True)
+    original_owner_id = db.Column(UUID(), nullable=False)  # First buyer
     
     status = db.Column(db.String(20), default='valid', nullable=False)
     
@@ -282,11 +317,11 @@ class Order(db.Model):
         Index('idx_orders_expires', 'expires_at', postgresql_where=db.text("status = 'pending'")),
     )
     
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
+    id = db.Column(UUID(), primary_key=True, default=uuid7.uuid7)
     reference = db.Column(db.String(30), unique=True, nullable=False)  # Human-readable
     
-    user_id = db.Column(UUID(as_uuid=True), nullable=False, index=True)
-    event_id = db.Column(UUID(as_uuid=True), nullable=False)
+    user_id = db.Column(UUID(), nullable=False, index=True)
+    event_id = db.Column(UUID(), nullable=False)
     
     status = db.Column(db.String(20), default='pending', nullable=False)
     
@@ -298,7 +333,7 @@ class Order(db.Model):
     payment_reference = db.Column(db.String(200))  # Transaction ID only
 
     # Discount applied
-    discount_code_id = db.Column(UUID(as_uuid=True), db.ForeignKey('discount_codes.id'), nullable=True)
+    discount_code_id = db.Column(UUID(), db.ForeignKey('discount_codes.id'), nullable=True)
     discount_cents = db.Column(db.Integer, default=0, nullable=False)  # Discount amount applied
     subtotal_cents = db.Column(db.Integer, nullable=False)  # Original total before discount
     
@@ -311,7 +346,7 @@ class Order(db.Model):
     updated_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Client tracking (for multi-tenant)
-    api_client_id = db.Column(UUID(as_uuid=True), db.ForeignKey('api_clients.id'))
+    api_client_id = db.Column(UUID(), db.ForeignKey('api_clients.id'))
     
     # IP tracking for fraud prevention
     ip_address = db.Column(db.String(45))  # IPv6 max length
@@ -377,14 +412,14 @@ class OrderItem(db.Model):
         CheckConstraint('unit_price_cents >= 0', name='check_unit_price_positive'),
     )
     
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
+    id = db.Column(UUID(), primary_key=True, default=uuid7.uuid7)
     order_id = db.Column(
-        UUID(as_uuid=True),
+        UUID(),
         db.ForeignKey('orders.id', ondelete='CASCADE'),
         nullable=False
     )
     ticket_type_id = db.Column(
-        UUID(as_uuid=True),
+        UUID(),
         db.ForeignKey('ticket_types.id', ondelete='RESTRICT'),
         nullable=False
     )
@@ -435,23 +470,23 @@ class ResaleListing(db.Model):
         Index('idx_resale_active_event', 'event_id', postgresql_where=db.text("status = 'active'")),
     )
     
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
+    id = db.Column(UUID(), primary_key=True, default=uuid7.uuid7)
     ticket_id = db.Column(
-        UUID(as_uuid=True),
+        UUID(),
         db.ForeignKey('tickets.id', ondelete='CASCADE'),
         unique=True,
         nullable=False
     )
     
-    seller_id = db.Column(UUID(as_uuid=True), nullable=False, index=True)
-    event_id = db.Column(UUID(as_uuid=True), nullable=False)  # Denormalized for queries
+    seller_id = db.Column(UUID(), nullable=False, index=True)
+    event_id = db.Column(UUID(), nullable=False)  # Denormalized for queries
     
     asking_price_cents = db.Column(db.Integer, nullable=False)
     original_price_cents = db.Column(db.Integer, nullable=False)  # For reference
     
     status = db.Column(db.String(20), default='active', nullable=False)
     
-    buyer_id = db.Column(UUID(as_uuid=True))  # Set when sold
+    buyer_id = db.Column(UUID())  # Set when sold
     
     listed_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow, nullable=False)
     sold_at = db.Column(db.DateTime(timezone=True))
@@ -498,15 +533,15 @@ class Validation(db.Model):
         Index('idx_validations_ticket', 'ticket_id'),
     )
     
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
+    id = db.Column(UUID(), primary_key=True, default=uuid7.uuid7)
     
-    ticket_id = db.Column(UUID(as_uuid=True), db.ForeignKey('tickets.id'))  # Nullable for not_found
-    event_id = db.Column(UUID(as_uuid=True), nullable=False)
+    ticket_id = db.Column(UUID(), db.ForeignKey('tickets.id'))  # Nullable for not_found
+    event_id = db.Column(UUID(), nullable=False)
     
     result = db.Column(db.String(20), nullable=False)
     result_details = db.Column(db.String(200))  # Additional context
     
-    scanned_by = db.Column(UUID(as_uuid=True))  # Staff user ID
+    scanned_by = db.Column(UUID())  # Staff user ID
     location = db.Column(db.String(100))  # "Main Entrance", "VIP Gate"
     
     # Request metadata
@@ -550,13 +585,13 @@ class ApiClient(db.Model):
         ),
     )
     
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
+    id = db.Column(UUID(), primary_key=True, default=uuid7.uuid7)
     
     name = db.Column(db.String(100), nullable=False)
     api_key_hash = db.Column(db.String(64), nullable=False, unique=True)
     
     # Restrictions
-    allowed_events = db.Column(ARRAY(UUID(as_uuid=True)))  # NULL = all events
+    allowed_events = db.Column(db.JSON)  # NULL = all events; list of UUID strings in JSON
     rate_limit_per_minute = db.Column(db.Integer, default=60, nullable=False)
     
     is_active = db.Column(db.Boolean, default=True, nullable=False)
@@ -575,7 +610,7 @@ class ApiClient(db.Model):
         """Check if client can access specific event."""
         if self.allowed_events is None:
             return True
-        return uuid.UUID(event_id) in self.allowed_events
+        return str(event_id) in [str(e) for e in self.allowed_events]
     
     def to_dict(self) -> dict:
         return {
@@ -604,16 +639,16 @@ class AuditLog(db.Model):
         Index('idx_audit_time', 'created_at'),
     )
     
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
+    id = db.Column(UUID(), primary_key=True, default=uuid7.uuid7)
     
     # What happened
     action = db.Column(db.String(50), nullable=False)  # e.g., 'ticket.validate', 'order.confirm'
     entity_type = db.Column(db.String(50), nullable=False)  # e.g., 'ticket', 'order'
-    entity_id = db.Column(UUID(as_uuid=True), nullable=False)
+    entity_id = db.Column(UUID(), nullable=False)
     
     # Who did it
-    user_id = db.Column(UUID(as_uuid=True))  # Can be NULL for system actions
-    api_client_id = db.Column(UUID(as_uuid=True))
+    user_id = db.Column(UUID())  # Can be NULL for system actions
+    api_client_id = db.Column(UUID())
     
     # Context
     ip_address = db.Column(db.String(45))
@@ -708,13 +743,13 @@ class DiscountCode(db.Model):
         Index('idx_discount_codes_event', 'event_id'),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
+    id = db.Column(UUID(), primary_key=True, default=uuid7.uuid7)
 
     # Code itself - case insensitive, stored uppercase
     code = db.Column(db.String(50), nullable=False, unique=True)
 
     # Optional event restriction (NULL = all events)
-    event_id = db.Column(UUID(as_uuid=True), nullable=True, index=True)
+    event_id = db.Column(UUID(), nullable=True, index=True)
 
     # Discount configuration
     discount_type = db.Column(db.String(20), nullable=False)  # 'percentage' or 'fixed'
@@ -738,7 +773,7 @@ class DiscountCode(db.Model):
 
     # Metadata
     description = db.Column(db.String(255))  # Internal note, e.g., "Friends & Family"
-    created_by = db.Column(UUID(as_uuid=True))  # Organizer who created it
+    created_by = db.Column(UUID())  # Organizer who created it
 
     created_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -836,19 +871,19 @@ class DiscountCodeUsage(db.Model):
         Index('idx_discount_usage_order', 'order_id'),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
+    id = db.Column(UUID(), primary_key=True, default=uuid7.uuid7)
 
     discount_code_id = db.Column(
-        UUID(as_uuid=True),
+        UUID(),
         db.ForeignKey('discount_codes.id', ondelete='CASCADE'),
         nullable=False
     )
     order_id = db.Column(
-        UUID(as_uuid=True),
+        UUID(),
         db.ForeignKey('orders.id', ondelete='CASCADE'),
         nullable=False
     )
-    user_id = db.Column(UUID(as_uuid=True), nullable=False)
+    user_id = db.Column(UUID(), nullable=False)
 
     # Snapshot of discount applied
     discount_amount_cents = db.Column(db.Integer, nullable=False)
