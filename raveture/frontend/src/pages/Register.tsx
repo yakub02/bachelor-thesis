@@ -2,12 +2,13 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
-import { useAuth } from '@/context'
-import { AnimatedBackground, GlowButton, GlowCard, GlowInput } from '@/components/design'
+import { Eye, EyeOff, AlertTriangle, ArrowLeft } from 'lucide-react'
+import { useAuth, useLang } from '@/context'
 
 export function Register() {
   const navigate = useNavigate()
   const { register, isLoading } = useAuth()
+  const { t } = useLang()
 
   const [formData, setFormData] = useState({
     email: '',
@@ -21,29 +22,15 @@ export function Register() {
   const [error, setError] = useState<string | null>(null)
 
   useGSAP(() => {
-    const tl = gsap.timeline()
-
-    tl.fromTo(
-      '.register-logo',
-      { opacity: 0, y: -20 },
-      { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }
+    gsap.fromTo(
+      '[data-register-reveal]',
+      { opacity: 0, y: 14 },
+      { opacity: 1, y: 0, duration: 0.6, stagger: 0.05, ease: 'power3.out' }
     )
-      .fromTo(
-        '.register-card',
-        { opacity: 0, y: 30, scale: 0.98 },
-        { opacity: 1, y: 0, scale: 1, duration: 0.8, ease: 'power3.out' },
-        '-=0.3'
-      )
-      .fromTo(
-        '.register-back',
-        { opacity: 0 },
-        { opacity: 1, duration: 0.4, ease: 'power3.out' },
-        '-=0.2'
-      )
   }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
     }))
@@ -54,44 +41,43 @@ export function Register() {
     e.preventDefault()
     setError(null)
 
-    // Validation
     if (!formData.email || !formData.username || !formData.password) {
-      setError('Please fill in all required fields')
+      setError(t.auth.fillAll)
       return
     }
 
     if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters')
+      setError(t.auth.pwdMin)
       return
     }
 
     if (!/[A-Z]/.test(formData.password)) {
-      setError('Password must contain at least one uppercase letter')
+      setError(t.auth.pwdUpper)
       return
     }
 
     if (!/[a-z]/.test(formData.password)) {
-      setError('Password must contain at least one lowercase letter')
+      setError(t.auth.pwdLower)
       return
     }
 
     if (!/[0-9]/.test(formData.password)) {
-      setError('Password must contain at least one number')
+      setError(t.auth.pwdNumber)
       return
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match')
+      setError(t.auth.pwdMatch)
       return
     }
 
     if (formData.username.length < 3) {
-      setError('Username must be at least 3 characters')
+      setError(t.auth.usernameMin)
       return
     }
 
     if (!/^[a-zA-Z0-9_]+$/.test(formData.username)) {
-      setError('Username can only contain letters, numbers, and underscores')
+      setError(t.auth.usernameInvalid)
       return
     }
 
@@ -109,145 +95,211 @@ export function Register() {
       } else if (err && typeof err === 'object' && 'error' in err) {
         setError((err as { error: string }).error)
       } else {
-        setError('Registration failed. Please try again.')
+        setError(t.auth.registerFailed)
       }
     }
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-bg-dark py-12">
-      <AnimatedBackground />
+    <div className="relative min-h-screen bg-bg-dark text-white flex flex-col">
+      {/* Issue strip */}
+      <div className="border-b border-white/10">
+        <div className="max-w-[1440px] mx-auto px-6 sm:px-10 h-9 flex items-center gap-5 text-[10px] font-mono tracking-[0.22em] uppercase text-white/50 tabular-nums">
+          <span className="text-primary text-xs leading-none">◆</span>
+          <Link to="/" className="text-white font-medium hover:text-primary transition-colors">
+            RAVETURE
+          </Link>
+          <span className="opacity-40">/</span>
+          <span>Access</span>
+          <div className="ml-auto flex items-center gap-2">
+            <span className="w-1 h-1 bg-primary" />
+            <span>New Account</span>
+          </div>
+        </div>
+      </div>
 
-      <div className="relative z-10 w-full max-w-md mx-4">
-        {/* Logo */}
-        <Link to="/" className="register-logo flex items-center gap-3 justify-center mb-12 group">
-          <div className="w-10 h-10 bg-primary transition-all duration-300 group-hover:shadow-[0_0_30px_rgba(218,120,88,0.5)]" />
-          <h1 className="text-3xl font-bold tracking-tighter uppercase">RAVETURE</h1>
-        </Link>
+      <main className="flex-1 flex items-center justify-center px-6 py-14">
+        <div className="w-full max-w-[420px]">
+          <Link
+            to="/"
+            data-register-reveal
+            className="group inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.2em] uppercase text-white/50 hover:text-white transition-colors mb-10"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" />
+            <span>Back to Home</span>
+          </Link>
 
-        {/* Register Card */}
-        <GlowCard className="register-card p-8">
-          <div className="mb-8">
-            <span className="text-primary text-xs font-mono uppercase tracking-widest mb-2 block">
-              [ New Account ]
-            </span>
-            <h2 className="text-2xl font-bold uppercase tracking-tight">Join the Movement</h2>
-            <p className="text-text-muted text-sm mt-2">
-              Create your account and join the rave community
+          <div data-register-reveal className="mb-10">
+            <div className="text-[10px] font-mono tracking-[0.22em] uppercase text-primary mb-3">
+              § 01 / {t.auth.registerBadge}
+            </div>
+            <h1
+              className="font-headline text-[clamp(2rem,7vw,2.75rem)] uppercase leading-[0.95] tracking-[-0.03em] mb-3"
+              style={{ fontWeight: 700 }}
+            >
+              {t.auth.registerTitle}
+            </h1>
+            <p className="text-white/55 text-[13px] leading-[1.6]">
+              {t.auth.registerSubtitle}
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <GlowInput
-              label="Email *"
-              type="email"
-              name="email"
-              placeholder="your@email.com"
-              value={formData.email}
-              onChange={handleChange}
-              autoComplete="email"
-            />
-
-            <GlowInput
-              label="Username *"
-              type="text"
-              name="username"
-              placeholder="your_username"
-              value={formData.username}
-              onChange={handleChange}
-              autoComplete="username"
-            />
-
-            <GlowInput
-              label="Display Name"
-              type="text"
-              name="displayName"
-              placeholder="How should we call you?"
-              value={formData.displayName}
-              onChange={handleChange}
-            />
-
-            <div className="relative">
-              <GlowInput
-                label="Password *"
-                type={showPassword ? 'text' : 'password'}
-                name="password"
-                placeholder="Min. 8 chars, uppercase, lowercase, number"
-                value={formData.password}
+          <form
+            data-register-reveal
+            onSubmit={handleSubmit}
+            className="border-t border-white/10"
+          >
+            {/* Email */}
+            <label className="block border-b border-white/10 py-4">
+              <span className="text-[10px] font-mono tracking-[0.22em] uppercase text-white/50 mb-1.5 block">
+                {t.auth.email} *
+              </span>
+              <input
+                type="email"
+                name="email"
+                placeholder="your@email.com"
+                value={formData.email}
                 onChange={handleChange}
-                autoComplete="new-password"
+                autoComplete="email"
+                className="w-full bg-transparent text-[15px] text-white placeholder-white/25 focus:outline-none"
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-[38px] text-text-muted hover:text-primary transition-colors"
-              >
-                <span className="material-symbols-outlined text-xl">
-                  {showPassword ? 'visibility_off' : 'visibility'}
-                </span>
-              </button>
-            </div>
+            </label>
 
-            <div className="relative">
-              <GlowInput
-                label="Confirm Password *"
-                type={showConfirmPassword ? 'text' : 'password'}
-                name="confirmPassword"
-                placeholder="Repeat your password"
-                value={formData.confirmPassword}
+            {/* Username */}
+            <label className="block border-b border-white/10 py-4">
+              <span className="text-[10px] font-mono tracking-[0.22em] uppercase text-white/50 mb-1.5 block">
+                {t.auth.username} *
+              </span>
+              <input
+                type="text"
+                name="username"
+                placeholder="your_username"
+                value={formData.username}
                 onChange={handleChange}
-                autoComplete="new-password"
+                autoComplete="username"
+                className="w-full bg-transparent text-[15px] text-white placeholder-white/25 focus:outline-none"
               />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-4 top-[38px] text-text-muted hover:text-primary transition-colors"
-              >
-                <span className="material-symbols-outlined text-xl">
-                  {showConfirmPassword ? 'visibility_off' : 'visibility'}
-                </span>
-              </button>
-            </div>
+            </label>
+
+            {/* Display name */}
+            <label className="block border-b border-white/10 py-4">
+              <span className="text-[10px] font-mono tracking-[0.22em] uppercase text-white/50 mb-1.5 block">
+                {t.auth.displayName}
+              </span>
+              <input
+                type="text"
+                name="displayName"
+                placeholder="How should we call you?"
+                value={formData.displayName}
+                onChange={handleChange}
+                className="w-full bg-transparent text-[15px] text-white placeholder-white/25 focus:outline-none"
+              />
+            </label>
+
+            {/* Password */}
+            <label className="block border-b border-white/10 py-4">
+              <span className="text-[10px] font-mono tracking-[0.22em] uppercase text-white/50 mb-1.5 block">
+                {t.auth.password} *
+              </span>
+              <div className="flex items-center gap-3">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  placeholder="Min. 8 chars, upper, lower, number"
+                  value={formData.password}
+                  onChange={handleChange}
+                  autoComplete="new-password"
+                  className="flex-1 min-w-0 bg-transparent text-[15px] text-white placeholder-white/25 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  className="text-white/40 hover:text-white transition-colors shrink-0"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" strokeWidth={1.5} />
+                  ) : (
+                    <Eye className="w-4 h-4" strokeWidth={1.5} />
+                  )}
+                </button>
+              </div>
+            </label>
+
+            {/* Confirm password */}
+            <label className="block border-b border-white/10 py-4">
+              <span className="text-[10px] font-mono tracking-[0.22em] uppercase text-white/50 mb-1.5 block">
+                {t.auth.confirmPassword} *
+              </span>
+              <div className="flex items-center gap-3">
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  name="confirmPassword"
+                  placeholder="Repeat your password"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  autoComplete="new-password"
+                  className="flex-1 min-w-0 bg-transparent text-[15px] text-white placeholder-white/25 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                  className="text-white/40 hover:text-white transition-colors shrink-0"
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="w-4 h-4" strokeWidth={1.5} />
+                  ) : (
+                    <Eye className="w-4 h-4" strokeWidth={1.5} />
+                  )}
+                </button>
+              </div>
+            </label>
 
             {error && (
-              <div className="p-4 border border-red-500/50 bg-red-500/10 text-red-400 text-sm font-mono">
-                <div className="flex items-start gap-2">
-                  <span className="text-red-500">!</span>
-                  {error}
-                </div>
+              <div className="border-b border-destructive/40 py-4 flex items-start gap-3">
+                <AlertTriangle
+                  className="w-4 h-4 text-destructive shrink-0 mt-0.5"
+                  strokeWidth={1.5}
+                />
+                <p className="text-[13px] text-white/80 leading-[1.5]">{error}</p>
               </div>
             )}
 
-            <GlowButton
+            <button
               type="submit"
-              variant="primary"
-              size="lg"
-              className="w-full"
               disabled={isLoading}
+              className="group mt-6 w-full inline-flex items-center justify-between gap-4 px-5 py-4 bg-primary text-black font-mono text-[11px] tracking-[0.22em] uppercase font-semibold hover:bg-white transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-primary"
             >
-              {isLoading ? 'Creating Account...' : 'Create Account'}
-            </GlowButton>
+              <span className="inline-flex items-center gap-3">
+                {isLoading && (
+                  <span className="inline-block w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                )}
+                <span>{isLoading ? t.auth.registering : t.auth.registerBtn}</span>
+              </span>
+              {!isLoading && (
+                <span className="transition-transform duration-300 group-hover:translate-x-1">
+                  →
+                </span>
+              )}
+            </button>
           </form>
 
-          <div className="mt-8 pt-6 border-t border-border-grey text-center">
-            <p className="text-text-muted text-sm">
-              Already have an account?{' '}
-              <Link to="/login" className="text-primary hover:text-white transition-colors font-mono uppercase">
-                Sign In
-              </Link>
-            </p>
-          </div>
-        </GlowCard>
+          <p data-register-reveal className="mt-8 text-[12px] text-white/45 text-center">
+            {t.auth.haveAccount}{' '}
+            <Link
+              to="/login"
+              className="text-primary font-mono text-[10px] tracking-[0.22em] uppercase hover:text-white transition-colors ml-1"
+            >
+              {t.auth.loginLink}
+            </Link>
+          </p>
+        </div>
+      </main>
 
-        {/* Back to Home */}
-        <div className="register-back mt-8 text-center">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 text-text-muted text-sm font-mono hover:text-primary transition-colors group"
-          >
-            <span className="transform transition-transform group-hover:-translate-x-1">&larr;</span>
-            Back to Home
-          </Link>
+      <div className="border-t border-white/10">
+        <div className="max-w-[1440px] mx-auto px-6 sm:px-10 h-10 flex items-center text-[10px] font-mono tracking-[0.22em] uppercase text-white/30">
+          © RAVETURE — Underground for the floor.
         </div>
       </div>
     </div>

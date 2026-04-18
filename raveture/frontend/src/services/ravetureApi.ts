@@ -274,6 +274,30 @@ class RavetureApiService {
     return this.request('/api/v1/auth/me')
   }
 
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    return this.request('/api/v1/auth/forgot-password', {
+      method: 'POST',
+      body: { email },
+      skipAuth: true,
+    })
+  }
+
+  async verifyResetToken(token: string): Promise<{ valid: boolean; error?: string }> {
+    return this.request('/api/v1/auth/verify-reset-token', {
+      method: 'POST',
+      body: { token },
+      skipAuth: true,
+    })
+  }
+
+  async resetPassword(token: string, new_password: string): Promise<{ message: string }> {
+    return this.request('/api/v1/auth/reset-password', {
+      method: 'POST',
+      body: { token, new_password },
+      skipAuth: true,
+    })
+  }
+
   async refreshTokens(): Promise<AuthTokens> {
     const response = await this.request<{
       access_token: string
