@@ -33,8 +33,8 @@ export function EventsSection() {
           const response = await ravetureApi.getEvents({ per_page: 3 })
           setEvents(response.events)
         }
-      } catch (err) {
-        console.error('Failed to fetch events:', err)
+      } catch {
+        // events fail silently; section renders empty state
       } finally {
         setIsLoading(false)
       }
@@ -54,7 +54,7 @@ export function EventsSection() {
         />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border border-border-grey">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="aspect-[4/5] bg-graphite animate-pulse border-r border-border-grey last:border-r-0" />
+            <div key={i} className="aspect-[3/4] bg-graphite animate-pulse border-r border-border-grey last:border-r-0" />
           ))}
         </div>
       </section>

@@ -7,7 +7,6 @@ export function NewsletterSection() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     // TODO: Implement newsletter signup API call
-    console.log('Newsletter signup:', email)
     setEmail('')
   }
 

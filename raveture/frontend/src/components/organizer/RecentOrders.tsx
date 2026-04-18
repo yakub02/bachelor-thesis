@@ -14,7 +14,7 @@ export function RecentOrders({ orders, className }: RecentOrdersProps) {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
-    return date.toLocaleString('cs-CZ', {
+    return date.toLocaleString('en-GB', {
       day: '2-digit',
       month: '2-digit',
       hour: '2-digit',

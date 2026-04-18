@@ -81,7 +81,7 @@ export function DiscountCodeManager({
   }
 
   return (
-    <Card hover={false} className={cn('p-6', className)}>
+    <Card className={cn('p-6', className)}>
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-primary">local_offer</span>
@@ -104,7 +104,7 @@ export function DiscountCodeManager({
 
       {/* Create form */}
       {showCreateForm && (
-        <div className="mb-6 p-4 border border-border-grey rounded-lg space-y-4">
+        <div className="mb-6 p-4 border border-border-grey space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <Input
               label="Code"
@@ -160,18 +160,18 @@ export function DiscountCodeManager({
           <div
             key={code.id}
             className={cn(
-              'p-4 border rounded-lg flex items-center justify-between',
+              'p-4 border flex items-center justify-between',
               code.is_active ? 'border-border-grey' : 'border-border-grey/50 opacity-60'
             )}
           >
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-mono font-bold">{code.code}</span>
-                <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded">
+                <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary">
                   {formatDiscount(code)}
                 </span>
                 {!code.is_active && (
-                  <span className="text-xs px-2 py-0.5 bg-text-muted/20 text-text-muted rounded">
+                  <span className="text-xs px-2 py-0.5 bg-text-muted/20 text-text-muted">
                     Inactive
                   </span>
                 )}

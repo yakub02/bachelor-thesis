@@ -60,7 +60,9 @@
 
   /* Fonts */
   --font-display: 'Space Grotesk', system-ui, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-headline: 'Unbounded', 'Inter Tight', system-ui, sans-serif;
+  --font-body: 'Inter Tight', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 
   /* Sharp Edges - Brutalist Style */
   --radius-none: 0px;
@@ -100,6 +102,111 @@ body {
 
 .mono-tech {
   font-family: var(--font-mono);
+}
+
+/* ===== HEADLINE + BODY + MONO TYPOGRAPHY ===== */
+.font-headline {
+  font-family: var(--font-headline);
+  font-feature-settings: "ss01" on, "ss02" on;
+}
+
+.font-body {
+  font-family: var(--font-body);
+  font-feature-settings: "cv11" on;
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+  font-feature-settings: "ss01" on, "zero" on;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Ticker marquee */
+@keyframes marquee-x {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+.marquee-track {
+  animation: marquee-x 60s linear infinite;
+  will-change: transform;
+}
+
+.marquee-track-fast {
+  animation: marquee-x 30s linear infinite;
+  will-change: transform;
+}
+
+/* Fine caret indicator */
+@keyframes pulse-dim {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.3; }
+}
+
+.animate-pulse-dim {
+  animation: pulse-dim 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Scanline overlay (very subtle) */
+@keyframes scanlines-drift {
+  0%   { background-position: 0 0; }
+  100% { background-position: 0 4px; }
+}
+
+.scanlines {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.015) 0px,
+    rgba(255, 255, 255, 0.015) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  animation: scanlines-drift 4s linear infinite;
+  pointer-events: none;
+}
+
+/* Slow rotating gradient for ambient glow */
+@keyframes rotate-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.rotate-slow {
+  animation: rotate-slow 40s linear infinite;
+}
+
+/* Word reveal for hero */
+@keyframes word-rise {
+  from { opacity: 0; transform: translateY(100%) rotate(-4deg); }
+  to   { opacity: 1; transform: translateY(0) rotate(0); }
+}
+
+.word-rise {
+  display: inline-block;
+  animation: word-rise 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Letter underline that draws in on hover */
+.link-underline {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 0% 1px;
+  background-position: 0% 100%;
+  background-repeat: no-repeat;
+  transition: background-size 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.link-underline:hover,
+.group:hover .link-underline {
+  background-size: 100% 1px;
+}
+
+/* Focus ring that respects the brutalist edges */
+.focus-outline:focus-visible {
+  outline: 1px solid var(--color-primary);
+  outline-offset: 3px;
 }
 
 /* ===== TYPOGRAPHY ===== */
@@ -282,41 +389,6 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ===== NEW DESIGN TEST - 2026 MODERN EFFECTS ===== */
-
-/* Floating animation for gradient orbs */
-@keyframes float-slow {
-  0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  25% { transform: translate(30px, -30px) rotate(5deg); }
-  50% { transform: translate(0, -50px) rotate(0deg); }
-  75% { transform: translate(-30px, -30px) rotate(-5deg); }
-}
-
-@keyframes float-slow-reverse {
-  0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  25% { transform: translate(-30px, 30px) rotate(-5deg); }
-  50% { transform: translate(0, 50px) rotate(0deg); }
-  75% { transform: translate(30px, 30px) rotate(5deg); }
-}
-
-.animate-float-slow {
-  animation: float-slow 20s ease-in-out infinite;
-}
-
-.animate-float-slow-reverse {
-  animation: float-slow-reverse 25s ease-in-out infinite;
-}
-
-/* Grid pulse animation */
-@keyframes grid-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-.animate-grid-pulse {
-  animation: grid-pulse 8s ease-in-out infinite;
-}
-
 /* Scroll down indicator */
 @keyframes scroll-down {
   0% { transform: translateY(0); opacity: 1; }
@@ -326,43 +398,6 @@ body {
 
 .animate-scroll-down {
   animation: scroll-down 1.5s ease-in-out infinite;
-}
-
-/* Glow pulse */
-@keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 20px rgba(218, 120, 88, 0.3); }
-  50% { box-shadow: 0 0 40px rgba(218, 120, 88, 0.6); }
-}
-
-.animate-glow-pulse {
-  animation: glow-pulse 2s ease-in-out infinite;
-}
-
-/* Text shimmer effect */
-@keyframes text-shimmer {
-  0% { background-position: -200% center; }
-  100% { background-position: 200% center; }
-}
-
-.animate-text-shimmer {
-  background: linear-gradient(90deg, #fff 0%, #da7858 50%, #fff 100%);
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: text-shimmer 3s linear infinite;
-}
-
-/* Border gradient animation */
-@keyframes border-flow {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-.animate-border-flow {
-  background: linear-gradient(90deg, #252525, #da7858, #252525);
-  background-size: 200% 200%;
-  animation: border-flow 3s ease infinite;
 }
 
 /* Hide scrollbar but keep functionality */

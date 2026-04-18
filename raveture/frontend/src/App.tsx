@@ -1,10 +1,10 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import gsap from 'gsap'
 import { useGSAP } from '@gsap/react'
-import { AuthProvider } from '@/context'
+import { AuthProvider, LanguageProvider } from '@/context'
 import { ToastProvider } from '@/components/ui/Toast'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
-import { Home, Login, Register, CreateEvent, EditEvent, MyEvents, TicketAdmin, EventShop, Checkout, MyTickets, TicketDetail, OrganizerDashboard, NewDesign, Events, Profile, AdminDashboard, ScannerPage, ScanDashboard, Picks, Magazine, ArticleDetail } from '@/pages'
+import { Home, HomeLegacy, Login, Register, ForgotPassword, ResetPassword, CreateEvent, EditEvent, MyEvents, TicketAdmin, EventShop, Checkout, MyTickets, TicketDetail, OrganizerDashboard, NewDesign, Events, Profile, AdminDashboard, ScannerPage, ScanDashboard, Picks, Magazine, ArticleDetail } from '@/pages'
 
 // Register GSAP plugins
 gsap.registerPlugin(useGSAP)
@@ -13,13 +13,17 @@ function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
+        <LanguageProvider>
         <ToastProvider>
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Home />} />
+              <Route path="/legacy" element={<HomeLegacy />} />
               <Route path="/events" element={<Events />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/create-event" element={<CreateEvent />} />
               <Route path="/edit-event/:eventId" element={<EditEvent />} />
               <Route path="/my-events" element={<MyEvents />} />
@@ -40,6 +44,7 @@ function App() {
             </Routes>
           </BrowserRouter>
         </ToastProvider>
+        </LanguageProvider>
       </AuthProvider>
     </ErrorBoundary>
   )

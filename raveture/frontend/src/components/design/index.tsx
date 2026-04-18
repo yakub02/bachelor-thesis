@@ -1,127 +1,40 @@
 import { useRef, useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Menu, X } from 'lucide-react'
 import gsap from 'gsap'
-import { useAuth } from '@/context'
+import { useAuth, useLang } from '@/context'
 import { cn } from '@/utils'
 
 // ============================================================================
-// ANIMATED BACKGROUND WITH GRID + NOISE + FLOATING PARTICLES
+// STATIC BACKGROUND — noise + subtle grid, no animated effects
 // ============================================================================
 
 export function AnimatedBackground() {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
-    let animationId: number
-    const particles: Array<{
-      x: number
-      y: number
-      size: number
-      speedX: number
-      speedY: number
-      opacity: number
-    }> = []
-
-    const resize = () => {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
-    }
-
-    const createParticles = () => {
-      particles.length = 0
-      const count = Math.floor((canvas.width * canvas.height) / 15000)
-      for (let i = 0; i < count; i++) {
-        particles.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height,
-          size: Math.random() * 2 + 0.5,
-          speedX: (Math.random() - 0.5) * 0.3,
-          speedY: (Math.random() - 0.5) * 0.3,
-          opacity: Math.random() * 0.5 + 0.1,
-        })
-      }
-    }
-
-    const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-      particles.forEach((p) => {
-        p.x += p.speedX
-        p.y += p.speedY
-
-        if (p.x < 0) p.x = canvas.width
-        if (p.x > canvas.width) p.x = 0
-        if (p.y < 0) p.y = canvas.height
-        if (p.y > canvas.height) p.y = 0
-
-        ctx.beginPath()
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2)
-        ctx.fillStyle = `rgba(218, 120, 88, ${p.opacity})`
-        ctx.fill()
-      })
-
-      animationId = requestAnimationFrame(animate)
-    }
-
-    resize()
-    createParticles()
-    animate()
-
-    window.addEventListener('resize', () => {
-      resize()
-      createParticles()
-    })
-
-    return () => {
-      cancelAnimationFrame(animationId)
-    }
-  }, [])
-
   return (
     <>
-      {/* Noise overlay */}
+      {/* Film grain noise */}
       <div
-        className="fixed inset-0 z-0 pointer-events-none opacity-[0.03]"
+        className="fixed inset-0 z-0 pointer-events-none opacity-[0.025]"
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
         }}
       />
-
-      {/* Animated grid */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div
-          className="absolute inset-0 animate-grid-pulse"
-          style={{
-            backgroundImage: `
-              linear-gradient(rgba(218, 120, 88, 0.03) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(218, 120, 88, 0.03) 1px, transparent 1px)
-            `,
-            backgroundSize: '60px 60px',
-          }}
-        />
-      </div>
-
-      {/* Floating particles canvas */}
-      <canvas ref={canvasRef} className="fixed inset-0 z-0 pointer-events-none" />
-
-      {/* Gradient orbs */}
-      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-1/4 -left-1/4 w-1/2 h-1/2 bg-primary/5 rounded-full blur-[150px] animate-float-slow" />
-        <div className="absolute -bottom-1/4 -right-1/4 w-1/2 h-1/2 bg-primary/5 rounded-full blur-[150px] animate-float-slow-reverse" />
-      </div>
+      {/* Subtle static grid */}
+      <div
+        className="fixed inset-0 z-0 pointer-events-none"
+        style={{
+          backgroundImage: `
+            linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px)
+          `,
+          backgroundSize: '60px 60px',
+        }}
+      />
     </>
   )
 }
 
 // ============================================================================
-// GLOWING BUTTON COMPONENT
+// BUTTON — editorial, tracked, no glow
 // ============================================================================
 
 interface GlowButtonProps {
@@ -134,11 +47,19 @@ interface GlowButtonProps {
   type?: 'button' | 'submit'
 }
 
-export function GlowButton({ children, variant = 'primary', size = 'md', className, onClick, disabled, type = 'button' }: GlowButtonProps) {
+export function GlowButton({
+  children,
+  variant = 'primary',
+  size = 'md',
+  className,
+  onClick,
+  disabled,
+  type = 'button',
+}: GlowButtonProps) {
   const sizeClasses = {
-    sm: 'px-4 py-2 text-xs',
-    md: 'px-6 py-3 text-sm',
-    lg: 'px-8 py-4 text-base',
+    sm: 'px-4 py-2 text-[10px]',
+    md: 'px-5 py-3 text-[11px]',
+    lg: 'px-6 py-3.5 text-[12px]',
   }
 
   if (variant === 'primary') {
@@ -148,19 +69,16 @@ export function GlowButton({ children, variant = 'primary', size = 'md', classNa
         onClick={onClick}
         disabled={disabled}
         className={cn(
-          'relative group font-mono font-bold uppercase tracking-wider',
+          'font-mono font-semibold uppercase tracking-[0.2em]',
           'bg-primary text-black',
-          'transition-all duration-300',
-          'hover:shadow-[0_0_30px_rgba(218,120,88,0.5)]',
-          'active:scale-95',
-          'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none',
+          'transition-colors duration-200',
+          'hover:bg-white',
+          'disabled:opacity-40 disabled:cursor-not-allowed',
           sizeClasses[size],
           className
         )}
       >
-        {/* Glow effect */}
-        <span className="absolute inset-0 bg-primary opacity-0 group-hover:opacity-50 blur-xl transition-opacity duration-300" />
-        <span className="relative z-10">{children}</span>
+        {children}
       </button>
     )
   }
@@ -171,83 +89,47 @@ export function GlowButton({ children, variant = 'primary', size = 'md', classNa
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        'relative group font-mono font-bold uppercase tracking-wider',
-        'bg-transparent border border-border-grey text-white',
-        'transition-all duration-300',
-        'hover:border-primary hover:text-primary',
-        'hover:shadow-[0_0_20px_rgba(218,120,88,0.2)]',
-        'active:scale-95',
-        'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-border-grey disabled:hover:text-white disabled:hover:shadow-none',
+        'font-mono font-medium uppercase tracking-[0.2em]',
+        'bg-transparent border border-white/25 text-white',
+        'transition-colors duration-200',
+        'hover:border-white hover:text-white',
+        'disabled:opacity-40 disabled:cursor-not-allowed',
         sizeClasses[size],
         className
       )}
     >
-      <span className="relative z-10">{children}</span>
+      {children}
     </button>
   )
 }
 
 // ============================================================================
-// GLOWING CARD
+// CARD
 // ============================================================================
 
 interface GlowCardProps {
   children: React.ReactNode
   className?: string
-  glowColor?: string
   hover?: boolean
 }
 
-export function GlowCard({ children, className, glowColor = 'rgba(218, 120, 88, 0.15)', hover = true }: GlowCardProps) {
-  const cardRef = useRef<HTMLDivElement>(null)
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
-  const [isHovered, setIsHovered] = useState(false)
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!cardRef.current || !hover) return
-    const rect = cardRef.current.getBoundingClientRect()
-    setMousePos({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    })
-  }
-
+export function GlowCard({ children, className, hover = true }: GlowCardProps) {
   return (
     <div
-      ref={cardRef}
-      onMouseMove={handleMouseMove}
-      onMouseEnter={() => hover && setIsHovered(true)}
-      onMouseLeave={() => hover && setIsHovered(false)}
       className={cn(
-        'relative overflow-hidden',
-        'bg-graphite/50 backdrop-blur-sm',
-        'border border-border-grey',
-        'transition-all duration-500',
-        hover && 'hover:border-primary/50',
+        'bg-bg-dark border border-white/10',
+        'transition-colors duration-200',
+        hover && 'hover:border-white/25',
         className
       )}
     >
-      {/* Cursor glow effect */}
-      {isHovered && hover && (
-        <div
-          className="absolute pointer-events-none transition-opacity duration-300"
-          style={{
-            left: mousePos.x,
-            top: mousePos.y,
-            width: 300,
-            height: 300,
-            transform: 'translate(-50%, -50%)',
-            background: `radial-gradient(circle, ${glowColor} 0%, transparent 70%)`,
-          }}
-        />
-      )}
-      <div className="relative z-10">{children}</div>
+      {children}
     </div>
   )
 }
 
 // ============================================================================
-// GLOW INPUT
+// INPUT
 // ============================================================================
 
 interface GlowInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -256,50 +138,33 @@ interface GlowInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 
 export function GlowInput({ label, error, className, ...props }: GlowInputProps) {
-  const [isFocused, setIsFocused] = useState(false)
-
   return (
-    <div className="relative">
+    <div>
       {label && (
-        <label className="block text-xs font-mono uppercase text-text-muted mb-2 tracking-wider">
+        <label className="block text-[10px] font-mono uppercase tracking-[0.22em] text-white/50 mb-2">
           {label}
         </label>
       )}
-      <div className="relative">
-        <input
-          {...props}
-          onFocus={(e) => {
-            setIsFocused(true)
-            props.onFocus?.(e)
-          }}
-          onBlur={(e) => {
-            setIsFocused(false)
-            props.onBlur?.(e)
-          }}
-          className={cn(
-            'w-full px-4 py-3 bg-bg-dark/50 border',
-            error ? 'border-red-500' : 'border-border-grey',
-            'text-white placeholder-text-muted font-mono',
-            'transition-all duration-300',
-            'focus:outline-none',
-            error ? 'focus:border-red-500' : 'focus:border-primary',
-            error ? 'focus:shadow-[0_0_20px_rgba(239,68,68,0.2)]' : 'focus:shadow-[0_0_20px_rgba(218,120,88,0.2)]',
-            className
-          )}
-        />
-        {isFocused && !error && (
-          <div className="absolute inset-0 -z-10 bg-primary/10 blur-xl transition-opacity duration-300" />
+      <input
+        {...props}
+        className={cn(
+          'w-full px-4 py-3 bg-transparent border',
+          error ? 'border-destructive focus:border-destructive' : 'border-white/15 focus:border-white/60',
+          'text-white placeholder-white/30 text-sm',
+          'transition-colors duration-200',
+          'focus:outline-none',
+          className
         )}
-      </div>
+      />
       {error && (
-        <p className="mt-1 text-xs text-red-400 font-mono">{error}</p>
+        <p className="mt-1 text-[11px] text-destructive font-mono tracking-wider">{error}</p>
       )}
     </div>
   )
 }
 
 // ============================================================================
-// MAGNETIC ELEMENT (follows cursor slightly)
+// MAGNETIC ELEMENT
 // ============================================================================
 
 export function MagneticElement({ children, className }: { children: React.ReactNode; className?: string }) {
@@ -313,38 +178,22 @@ export function MagneticElement({ children, className }: { children: React.React
       const rect = el.getBoundingClientRect()
       const x = e.clientX - rect.left - rect.width / 2
       const y = e.clientY - rect.top - rect.height / 2
-
-      gsap.to(el, {
-        x: x * 0.1,
-        y: y * 0.1,
-        duration: 0.3,
-        ease: 'power2.out',
-      })
+      gsap.to(el, { x: x * 0.1, y: y * 0.1, duration: 0.3, ease: 'power2.out' })
     }
 
     const handleMouseLeave = () => {
-      gsap.to(el, {
-        x: 0,
-        y: 0,
-        duration: 0.5,
-        ease: 'elastic.out(1, 0.3)',
-      })
+      gsap.to(el, { x: 0, y: 0, duration: 0.5, ease: 'power3.out' })
     }
 
     el.addEventListener('mousemove', handleMouseMove)
     el.addEventListener('mouseleave', handleMouseLeave)
-
     return () => {
       el.removeEventListener('mousemove', handleMouseMove)
       el.removeEventListener('mouseleave', handleMouseLeave)
     }
   }, [])
 
-  return (
-    <div ref={ref} className={className}>
-      {children}
-    </div>
-  )
+  return <div ref={ref} className={className}>{children}</div>
 }
 
 // ============================================================================
@@ -355,321 +204,607 @@ interface NewNavbarProps {
   transparent?: boolean
 }
 
-const NAV_LINKS = [
-  { label: 'Magazine', to: '/magazine' },
-  { label: 'Events', to: '/events' },
-]
+// Isolated live clock so the rest of the header doesn't re-render every second
+function LiveClock({ className }: { className?: string }) {
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(t)
+  }, [])
+  return (
+    <span className={className}>
+      {now.toLocaleTimeString('en-GB', {
+        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+      })}
+    </span>
+  )
+}
 
 export function NewNavbar({ transparent = false }: NewNavbarProps) {
   const { isAuthenticated, user, logout } = useAuth()
+  const { lang, setLang, t } = useLang()
   const location = useLocation()
-  const [scrolled, setScrolled] = useState(false)
-  const [menuOpen, setMenuOpen] = useState(false)
-  const mobileMenuRef = useRef<HTMLDivElement>(null)
 
-  // Scroll-aware background
+  const primaryLinks = [
+    { label: t.nav.magazine, to: '/magazine', num: '01' },
+    { label: t.nav.events, to: '/events', num: '02' },
+  ]
+
+  const [scrolled, setScrolled] = useState(false)
+  const [hidden, setHidden] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  const headerRef = useRef<HTMLElement>(null)
+  const pillRef = useRef<HTMLDivElement>(null)
+  const navRef = useRef<HTMLElement>(null)
+  const mobilePanelRef = useRef<HTMLDivElement>(null)
+  const mobileItemsRef = useRef<HTMLDivElement>(null)
+  const lastScroll = useRef(0)
+  const hoverRaf = useRef<number | null>(null)
+
+  // Scroll state: compressed + hide-on-scroll-down
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 40)
+    const onScroll = () => {
+      const y = window.scrollY
+      setScrolled(y > 8)
+      const delta = y - lastScroll.current
+      if (y > 140 && delta > 4) setHidden(true)
+      else if (delta < -4) setHidden(false)
+      lastScroll.current = y
+    }
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  // Close mobile menu on route change
-  useEffect(() => {
-    setMenuOpen(false)
-  }, [location.pathname])
+  // Close menu on route change
+  useEffect(() => { setMenuOpen(false) }, [location.pathname])
 
-  // GSAP animation for mobile menu
+  // Lock body scroll when mobile menu open
   useEffect(() => {
-    if (!mobileMenuRef.current) return
-    gsap.to(mobileMenuRef.current, {
-      maxHeight: menuOpen ? 520 : 0,
-      opacity: menuOpen ? 1 : 0,
-      duration: menuOpen ? 0.38 : 0.22,
-      ease: menuOpen ? 'power3.out' : 'power3.in',
-    })
+    if (menuOpen) {
+      const original = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+      return () => { document.body.style.overflow = original }
+    }
   }, [menuOpen])
-
-  const close = () => setMenuOpen(false)
-  const showBg = !transparent || scrolled
 
   const isActive = (to: string) =>
     location.pathname === to || location.pathname.startsWith(to + '/')
 
+  // Build the full desktop nav item list (with role-gated extras) so hover pill can target any item
+  const desktopItems: { key: string; to: string; label: string; num: string }[] = [
+    ...primaryLinks.map((l) => ({ key: l.to, to: l.to, label: l.label, num: l.num })),
+  ]
+  if (isAuthenticated) {
+    desktopItems.push({ key: '/my-tickets', to: '/my-tickets', label: t.nav.myTickets, num: '03' })
+  }
+  if (isAuthenticated && (user?.role === 'organizer' || user?.role === 'admin')) {
+    desktopItems.push({ key: '/scan', to: '/scan', label: t.nav.scan, num: '04' })
+  }
+
+  // Hover-pill: slide a single indicator between nav items
+  const moveToItem = (el: HTMLElement | null) => {
+    if (!el || !pillRef.current || !navRef.current) return
+    const parentRect = navRef.current.getBoundingClientRect()
+    const r = el.getBoundingClientRect()
+    if (hoverRaf.current) cancelAnimationFrame(hoverRaf.current)
+    hoverRaf.current = requestAnimationFrame(() => {
+      gsap.to(pillRef.current, {
+        x: r.left - parentRect.left,
+        width: r.width,
+        opacity: 1,
+        duration: 0.4,
+        ease: 'power3.out',
+      })
+    })
+  }
+
+  const snapToActive = () => {
+    if (!navRef.current) return
+    const activeEl = navRef.current.querySelector<HTMLElement>('[data-nav-active="true"]')
+    if (activeEl) {
+      moveToItem(activeEl)
+    } else if (pillRef.current) {
+      gsap.to(pillRef.current, { opacity: 0, duration: 0.25, ease: 'power2.out' })
+    }
+  }
+
+  // Snap pill to active item on route change / initial mount
+  useEffect(() => {
+    const t = setTimeout(snapToActive, 50)
+    return () => clearTimeout(t)
+  }, [location.pathname, isAuthenticated, user?.role])
+
+  useEffect(() => {
+    window.addEventListener('resize', snapToActive)
+    return () => window.removeEventListener('resize', snapToActive)
+  }, [])
+
+  // Mobile menu — full-screen with staggered reveals
+  useEffect(() => {
+    if (!mobilePanelRef.current) return
+    if (menuOpen) {
+      gsap.fromTo(
+        mobilePanelRef.current,
+        { opacity: 0, y: -10 },
+        { opacity: 1, y: 0, duration: 0.35, ease: 'power3.out' }
+      )
+      if (mobileItemsRef.current) {
+        gsap.fromTo(
+          mobileItemsRef.current.querySelectorAll('[data-mobile-item]'),
+          { opacity: 0, y: 22 },
+          { opacity: 1, y: 0, duration: 0.55, stagger: 0.05, ease: 'power3.out', delay: 0.05 }
+        )
+      }
+    }
+  }, [menuOpen])
+
   return (
-    <header
-      className={cn(
-        'fixed top-0 left-0 right-0 z-50 transition-all duration-500',
-        showBg
-          ? 'bg-bg-dark/90 backdrop-blur-xl border-b border-border-grey/40'
-          : 'bg-transparent'
-      )}
-    >
-      {/* ── Main bar ─────────────────────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-5 sm:px-8 h-16 relative flex items-center">
+    <>
+      <header
+        ref={headerRef}
+        className={cn(
+          'fixed top-0 left-0 right-0 z-50 transition-transform duration-500 ease-[cubic-bezier(.2,.8,.2,1)]',
+          hidden && !menuOpen ? '-translate-y-full' : 'translate-y-0'
+        )}
+        aria-label="Site header"
+      >
+        {/* Top meta strip — suppressed when navbar is transparent (host page owns that space) */}
+        {!transparent && (
+          <div
+            className={cn(
+              'border-b border-white/10 bg-bg-dark overflow-hidden transition-[max-height,opacity] duration-[450ms] ease-[cubic-bezier(.2,.8,.2,1)]',
+              scrolled ? 'max-h-0 opacity-0' : 'max-h-[36px] opacity-100'
+            )}
+          >
+            <div className="max-w-[1440px] mx-auto px-6 sm:px-10 h-9 flex items-center gap-5 text-[10px] font-mono tracking-[0.22em] uppercase text-white/50 tabular-nums">
+              <span className="flex items-center gap-2">
+                <span className="w-1 h-1 bg-primary" />
+                <span className="hidden sm:inline">Prague · </span>
+                <LiveClock />
+              </span>
+              <span className="opacity-40 hidden md:inline">/</span>
+              <span className="hidden md:inline">48kHz — 24-bit</span>
+              <div className="ml-auto">
+                <LangPill lang={lang} setLang={setLang} />
+              </div>
+            </div>
+          </div>
+        )}
 
-        {/* Logo — always left */}
-        <Link
-          to="/"
-          onClick={close}
-          className="flex items-center gap-2.5 group shrink-0 z-10"
+        {/* Main bar */}
+        <div
+          className={cn(
+            'relative transition-all duration-500',
+            transparent && !scrolled
+              ? 'bg-transparent border-b border-transparent'
+              : 'bg-bg-dark border-b border-white/10'
+          )}
         >
-          <div className="w-7 h-7 bg-primary transition-all duration-300 group-hover:shadow-[0_0_18px_rgba(218,120,88,0.55)]" />
-          <span className="text-base font-bold tracking-tighter uppercase select-none">
-            RAVETURE
-          </span>
-        </Link>
-
-        {/* Desktop nav — absolutely centered in the bar */}
-        <nav
-          aria-label="Main navigation"
-          className="hidden md:flex items-center gap-7 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-        >
-          {NAV_LINKS.map((link) => (
+          <div
+            className={cn(
+              'max-w-[1440px] mx-auto px-6 sm:px-10 flex items-center transition-[height] duration-500',
+              scrolled ? 'h-14' : 'h-16'
+            )}
+          >
+            {/* Logo */}
             <Link
-              key={link.to}
-              to={link.to}
-              className={cn(
-                'relative text-xs font-mono uppercase tracking-wider transition-colors',
-                'after:absolute after:-bottom-1 after:left-0 after:h-px after:bg-primary after:transition-all after:duration-300',
-                isActive(link.to)
-                  ? 'text-white after:w-full'
-                  : 'text-text-muted hover:text-white after:w-0 hover:after:w-full'
-              )}
+              to="/"
+              className="group flex items-center gap-3 shrink-0 z-10"
+              aria-label="RAVETURE — home"
             >
-              {link.label}
+              <div className="relative w-7 h-7">
+                <div className="absolute inset-0 bg-primary transition-transform duration-500 ease-[cubic-bezier(.2,.8,.2,1)] group-hover:rotate-45" />
+                <div className="absolute inset-0 bg-primary mix-blend-screen transition-opacity duration-300 opacity-0 group-hover:opacity-60 group-hover:scale-125" />
+              </div>
+              <span className="font-headline text-[15px] tracking-[-0.02em] uppercase select-none leading-none" style={{ fontWeight: 700 }}>
+                RAVETURE
+              </span>
             </Link>
-          ))}
 
-          {isAuthenticated && (
-            <Link
-              to="/my-tickets"
-              className={cn(
-                'relative text-xs font-mono uppercase tracking-wider transition-colors',
-                'after:absolute after:-bottom-1 after:left-0 after:h-px after:bg-primary after:transition-all after:duration-300',
-                isActive('/my-tickets')
-                  ? 'text-white after:w-full'
-                  : 'text-text-muted hover:text-white after:w-0 hover:after:w-full'
-              )}
+            {/* Desktop nav — centered */}
+            <nav
+              ref={navRef}
+              aria-label="Main"
+              onMouseLeave={snapToActive}
+              className="hidden md:flex items-center relative absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+              style={{ position: 'absolute' }}
             >
-              My Tickets
-            </Link>
-          )}
+              {/* Hover/active pill */}
+              <div
+                ref={pillRef}
+                aria-hidden="true"
+                className="pointer-events-none absolute top-0 left-0 h-full bg-white/[0.06] border-x border-white/10"
+                style={{ width: 0, opacity: 0 }}
+              />
 
-          {isAuthenticated && (user?.role === 'organizer' || user?.role === 'admin') && (
-            <Link
-              to="/scan"
-              className={cn(
-                'relative text-xs font-mono uppercase tracking-wider transition-colors',
-                'after:absolute after:-bottom-1 after:left-0 after:h-px after:bg-primary after:transition-all after:duration-300',
-                isActive('/scan')
-                  ? 'text-white after:w-full'
-                  : 'text-text-muted hover:text-white after:w-0 hover:after:w-full'
+              <div className="flex items-stretch">
+                {desktopItems.map((item) => {
+                  const active = isActive(item.to)
+                  return (
+                    <Link
+                      key={item.key}
+                      to={item.to}
+                      data-nav-active={active ? 'true' : undefined}
+                      onMouseEnter={(e) => moveToItem(e.currentTarget)}
+                      className={cn(
+                        'group relative px-5 py-3 flex items-center gap-2.5 text-[11px] font-mono tracking-[0.22em] uppercase transition-colors duration-200',
+                        active ? 'text-white' : 'text-white/55 hover:text-white'
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          'text-[9px] tabular-nums transition-colors',
+                          active ? 'text-primary' : 'text-white/30 group-hover:text-primary'
+                        )}
+                      >
+                        {item.num}
+                      </span>
+                      <span className="relative overflow-hidden">
+                        <span className="block transition-transform duration-[450ms] ease-[cubic-bezier(.2,.8,.2,1)] group-hover:-translate-y-full">
+                          {item.label}
+                        </span>
+                        <span
+                          aria-hidden="true"
+                          className="absolute inset-0 block translate-y-full transition-transform duration-[450ms] ease-[cubic-bezier(.2,.8,.2,1)] group-hover:translate-y-0 text-primary"
+                        >
+                          {item.label}
+                        </span>
+                      </span>
+                      {active && (
+                        <span className="absolute left-5 right-5 bottom-1.5 h-px bg-primary" />
+                      )}
+                    </Link>
+                  )
+                })}
+              </div>
+            </nav>
+
+            {/* Right cluster */}
+            <div className="hidden md:flex items-center gap-3 ml-auto z-10">
+              {/* Lang toggle — only visible in main bar when top strip is hidden */}
+              {transparent && <LangPill lang={lang} setLang={setLang} />}
+
+              {isAuthenticated ? (
+                <>
+                  {user?.role === 'organizer' && (
+                    <Link
+                      to="/organizer"
+                      className="text-[10px] font-mono tracking-[0.22em] uppercase px-3 py-2 border border-white/15 text-white/80 hover:border-white hover:text-white transition-colors"
+                    >
+                      Dashboard
+                    </Link>
+                  )}
+                  {user?.role === 'admin' && (
+                    <Link
+                      to="/admin"
+                      className="text-[10px] font-mono tracking-[0.22em] uppercase px-3 py-2 border border-white/15 text-white/80 hover:border-white hover:text-white transition-colors"
+                    >
+                      Admin
+                    </Link>
+                  )}
+                  <UserBadge
+                    name={user?.display_name || user?.username || 'User'}
+                    onLogout={logout}
+                    logoutLabel={t.nav.logout}
+                  />
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    className="text-[10px] font-mono tracking-[0.22em] uppercase text-white/70 hover:text-white transition-colors"
+                  >
+                    {t.nav.login}
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="group inline-flex items-center gap-3 px-4 py-2 bg-primary text-black text-[10px] font-mono tracking-[0.22em] uppercase font-semibold hover:bg-white transition-colors duration-200"
+                  >
+                    <span>{t.nav.signUp}</span>
+                    <span className="transition-transform duration-300 group-hover:translate-x-0.5">→</span>
+                  </Link>
+                </>
               )}
+            </div>
+
+            {/* Mobile burger */}
+            <button
+              className="md:hidden ml-auto z-10 w-10 h-10 flex flex-col items-center justify-center gap-[5px] group"
+              onClick={() => setMenuOpen((v) => !v)}
+              aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={menuOpen}
             >
-              Scan
-            </Link>
-          )}
-        </nav>
-
-        {/* Desktop CTA — always right */}
-        <div className="hidden md:flex items-center gap-3 ml-auto z-10">
-          {isAuthenticated ? (
-            <>
-              {/* Role-specific link */}
-              {user?.role === 'organizer' && (
-                <Link to="/organizer">
-                  <GlowButton variant="outline" size="sm">Dashboard</GlowButton>
-                </Link>
-              )}
-              {user?.role === 'admin' && (
-                <Link to="/admin">
-                  <GlowButton variant="outline" size="sm">Admin</GlowButton>
-                </Link>
-              )}
-
-              {/* Username chip → profile */}
-              <Link
-                to="/profile"
-                className="max-w-[130px] truncate text-xs font-mono text-text-muted hover:text-primary transition-colors"
-              >
-                {user?.display_name || user?.username}
-              </Link>
-
-              <GlowButton variant="outline" size="sm" onClick={logout}>
-                Logout
-              </GlowButton>
-            </>
-          ) : (
-            <>
-              <Link to="/login">
-                <GlowButton variant="outline" size="sm">Login</GlowButton>
-              </Link>
-              <Link to="/register">
-                <GlowButton variant="primary" size="sm">Sign Up</GlowButton>
-              </Link>
-            </>
-          )}
+              <span
+                className={cn(
+                  'block w-5 h-px bg-white transition-transform duration-300 ease-[cubic-bezier(.2,.8,.2,1)]',
+                  menuOpen ? 'translate-y-[3px] rotate-45' : ''
+                )}
+              />
+              <span
+                className={cn(
+                  'block w-5 h-px bg-white transition-transform duration-300 ease-[cubic-bezier(.2,.8,.2,1)]',
+                  menuOpen ? '-translate-y-[3px] -rotate-45' : ''
+                )}
+              />
+            </button>
+          </div>
         </div>
+      </header>
 
-        {/* Mobile: hamburger — always right */}
-        <button
-          className="md:hidden ml-auto z-10 w-9 h-9 flex items-center justify-center border border-border-grey/70 text-text-muted hover:border-primary hover:text-primary transition-colors"
-          onClick={() => setMenuOpen((v) => !v)}
-          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-          aria-expanded={menuOpen}
+      {/* Mobile fullscreen overlay */}
+      {menuOpen && (
+        <div
+          ref={mobilePanelRef}
+          className="fixed inset-0 z-40 md:hidden bg-bg-dark overflow-y-auto"
+          style={{ opacity: 0 }}
         >
-          {menuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+          {/* Spacer for header */}
+          <div className="h-16" />
+
+          <div
+            ref={mobileItemsRef}
+            className="px-6 pt-6 pb-12"
+          >
+            {/* Kicker */}
+            <div data-mobile-item className="text-[10px] font-mono tracking-[0.22em] uppercase text-primary mb-8 flex items-center gap-2">
+              <span>§ Menu</span>
+              <span className="opacity-40">/</span>
+              <LiveClock className="text-white/60 tabular-nums" />
+            </div>
+
+            {/* Big nav links */}
+            <nav className="flex flex-col divide-y divide-white/10 border-t border-b border-white/10">
+              {desktopItems.map((item) => (
+                <Link
+                  key={item.key}
+                  to={item.to}
+                  data-mobile-item
+                  onClick={() => setMenuOpen(false)}
+                  className={cn(
+                    'group relative flex items-baseline gap-5 py-5 transition-colors',
+                    isActive(item.to) ? 'text-white' : 'text-white/80 hover:text-white'
+                  )}
+                >
+                  <span className="text-[10px] font-mono tracking-[0.22em] uppercase text-primary tabular-nums w-8 shrink-0">
+                    {item.num}
+                  </span>
+                  <span
+                    className="font-headline uppercase leading-none tracking-[-0.02em] flex-1"
+                    style={{ fontSize: 'clamp(2.25rem,9vw,3.5rem)', fontWeight: 700 }}
+                  >
+                    {item.label}
+                  </span>
+                  <span className="text-white/30 group-hover:text-primary group-hover:translate-x-1 transition-all duration-300 text-2xl">
+                    →
+                  </span>
+                </Link>
+              ))}
+            </nav>
+
+            {/* Meta row */}
+            <div data-mobile-item className="mt-12 pt-8 border-t border-white/10">
+              {isAuthenticated ? (
+                <div className="flex flex-col gap-5">
+                  <div>
+                    <div className="text-[10px] font-mono tracking-[0.22em] uppercase text-white/40 mb-1.5">
+                      {t.nav.signedInAs}
+                    </div>
+                    <Link
+                      to="/profile"
+                      onClick={() => setMenuOpen(false)}
+                      className="font-headline text-2xl text-white hover:text-primary transition-colors"
+                      style={{ fontWeight: 600 }}
+                    >
+                      {user?.display_name || user?.username}
+                    </Link>
+                  </div>
+                  <button
+                    onClick={() => { logout(); setMenuOpen(false) }}
+                    className="self-start text-[10px] font-mono tracking-[0.22em] uppercase px-4 py-2.5 border border-white/20 text-white/80 hover:border-white hover:text-white transition-colors"
+                  >
+                    {t.nav.logout}
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-3">
+                  <Link
+                    to="/login"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex-1 text-center px-4 py-4 border border-white/20 text-white text-[11px] font-mono tracking-[0.22em] uppercase hover:border-white transition-colors"
+                  >
+                    {t.nav.login}
+                  </Link>
+                  <Link
+                    to="/register"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex-1 text-center px-4 py-4 bg-primary text-black text-[11px] font-mono tracking-[0.22em] uppercase font-semibold hover:bg-white transition-colors"
+                  >
+                    {t.nav.signUp}
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {/* Language + colophon */}
+            <div data-mobile-item className="mt-10 flex items-center justify-between gap-4">
+              <LangPill lang={lang} setLang={setLang} />
+              <span className="text-[10px] font-mono tracking-[0.22em] uppercase text-white/30">
+                © RAVETURE
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
+// Language toggle with sliding indicator
+function LangPill({
+  lang,
+  setLang,
+}: {
+  lang: 'en' | 'cs'
+  setLang: (l: 'en' | 'cs') => void
+}) {
+  return (
+    <div className="relative inline-flex items-center border border-white/15 select-none">
+      <div
+        aria-hidden="true"
+        className="absolute top-0 bottom-0 w-1/2 bg-primary transition-transform duration-[400ms] ease-[cubic-bezier(.2,.8,.2,1)]"
+        style={{ transform: lang === 'en' ? 'translateX(0%)' : 'translateX(100%)' }}
+      />
+      <button
+        type="button"
+        onClick={() => setLang('en')}
+        className={cn(
+          'relative z-10 px-2.5 py-1 text-[10px] font-mono tracking-[0.22em] uppercase transition-colors duration-200',
+          lang === 'en' ? 'text-black font-semibold' : 'text-white/70 hover:text-white'
+        )}
+      >
+        EN
+      </button>
+      <button
+        type="button"
+        onClick={() => setLang('cs')}
+        className={cn(
+          'relative z-10 px-2.5 py-1 text-[10px] font-mono tracking-[0.22em] uppercase transition-colors duration-200',
+          lang === 'cs' ? 'text-black font-semibold' : 'text-white/70 hover:text-white'
+        )}
+      >
+        CS
+      </button>
+    </div>
+  )
+}
+
+// Avatar-like initials + hover logout
+function UserBadge({
+  name,
+  logoutLabel,
+  onLogout,
+}: {
+  name: string
+  logoutLabel: string
+  onLogout: () => void
+}) {
+  const initials = name
+    .split(/\s+|_/)
+    .map((s) => s[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
+
+  return (
+    <div className="group relative">
+      <Link
+        to="/profile"
+        className="flex items-center gap-2.5 pl-2 pr-3 py-1.5 border border-white/15 hover:border-white/50 transition-colors"
+      >
+        <span className="w-6 h-6 bg-primary text-black text-[10px] font-mono font-semibold tracking-wider flex items-center justify-center">
+          {initials || '∙'}
+        </span>
+        <span className="text-[10px] font-mono tracking-[0.22em] uppercase text-white/80 max-w-[120px] truncate">
+          {name}
+        </span>
+      </Link>
+
+      {/* Hover dropdown */}
+      <div className="absolute right-0 top-full mt-1 w-48 bg-bg-dark border border-white/15 opacity-0 translate-y-1 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-200">
+        <Link
+          to="/profile"
+          className="block px-4 py-3 text-[10px] font-mono tracking-[0.22em] uppercase text-white/70 hover:text-white hover:bg-white/[0.04] transition-colors border-b border-white/10"
+        >
+          § Profile
+        </Link>
+        <Link
+          to="/my-tickets"
+          className="block px-4 py-3 text-[10px] font-mono tracking-[0.22em] uppercase text-white/70 hover:text-white hover:bg-white/[0.04] transition-colors border-b border-white/10"
+        >
+          § Tickets
+        </Link>
+        <button
+          onClick={onLogout}
+          className="w-full text-left px-4 py-3 text-[10px] font-mono tracking-[0.22em] uppercase text-white/70 hover:text-primary hover:bg-white/[0.04] transition-colors"
+        >
+          {logoutLabel}
         </button>
       </div>
-
-      {/* ── Mobile menu ─────────────────────────────────────────────── */}
-      <div
-        ref={mobileMenuRef}
-        className="md:hidden overflow-hidden border-t border-border-grey/40 bg-bg-dark/95 backdrop-blur-xl"
-        style={{ maxHeight: 0, opacity: 0 }}
-      >
-        <div className="px-5 pt-4 pb-6 flex flex-col">
-          {/* Nav links */}
-          <div className="flex flex-col divide-y divide-border-grey/30">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.to}
-                to={link.to}
-                onClick={close}
-                className={cn(
-                  'flex items-center gap-3 py-3.5 text-sm font-mono uppercase tracking-wider transition-colors',
-                  isActive(link.to) ? 'text-primary' : 'text-text-muted hover:text-white'
-                )}
-              >
-                <span className="text-primary text-[10px]">◆</span>
-                {link.label}
-              </Link>
-            ))}
-
-            {isAuthenticated && (
-              <Link
-                to="/my-tickets"
-                onClick={close}
-                className={cn(
-                  'flex items-center gap-3 py-3.5 text-sm font-mono uppercase tracking-wider transition-colors',
-                  isActive('/my-tickets') ? 'text-primary' : 'text-text-muted hover:text-white'
-                )}
-              >
-                <span className="text-primary text-[10px]">◆</span>
-                My Tickets
-              </Link>
-            )}
-
-            {isAuthenticated && user?.role === 'organizer' && (
-              <Link
-                to="/organizer"
-                onClick={close}
-                className="flex items-center gap-3 py-3.5 text-sm font-mono uppercase tracking-wider text-text-muted hover:text-white transition-colors"
-              >
-                <span className="text-primary text-[10px]">◆</span>
-                Dashboard
-              </Link>
-            )}
-
-            {isAuthenticated && user?.role === 'admin' && (
-              <Link
-                to="/admin"
-                onClick={close}
-                className="flex items-center gap-3 py-3.5 text-sm font-mono uppercase tracking-wider text-text-muted hover:text-white transition-colors"
-              >
-                <span className="text-primary text-[10px]">◆</span>
-                Admin
-              </Link>
-            )}
-
-            {isAuthenticated && (user?.role === 'organizer' || user?.role === 'admin') && (
-              <Link
-                to="/scan"
-                onClick={close}
-                className={cn(
-                  'flex items-center gap-3 py-3.5 text-sm font-mono uppercase tracking-wider transition-colors',
-                  isActive('/scan') ? 'text-primary' : 'text-text-muted hover:text-white'
-                )}
-              >
-                <span className="text-primary text-[10px]">◆</span>
-                Scan Tickets
-              </Link>
-            )}
-          </div>
-
-          {/* Auth section */}
-          <div className="mt-5 pt-5 border-t border-border-grey/40">
-            {isAuthenticated ? (
-              <div className="flex flex-col gap-3">
-                <p className="text-xs font-mono text-text-muted">
-                  Signed in as{' '}
-                  <Link
-                    to="/profile"
-                    onClick={close}
-                    className="text-primary hover:underline"
-                  >
-                    {user?.display_name || user?.username}
-                  </Link>
-                </p>
-                <GlowButton
-                  variant="outline"
-                  size="sm"
-                  onClick={() => { logout(); close() }}
-                  className="w-full"
-                >
-                  Logout
-                </GlowButton>
-              </div>
-            ) : (
-              <div className="flex gap-3">
-                <Link to="/login" onClick={close} className="flex-1">
-                  <GlowButton variant="outline" size="sm" className="w-full">
-                    Login
-                  </GlowButton>
-                </Link>
-                <Link to="/register" onClick={close} className="flex-1">
-                  <GlowButton variant="primary" size="sm" className="w-full">
-                    Sign Up
-                  </GlowButton>
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </header>
+    </div>
   )
 }
 
 // ============================================================================
-// FOOTER - NEW DESIGN
+// FOOTER
 // ============================================================================
 
 export function NewFooter() {
+  const year = new Date().getFullYear()
   return (
-    <footer className="border-t border-border-grey py-12 px-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-8">
-          {/* Logo */}
-          <div className="flex items-center gap-3">
-            <div className="w-6 h-6 bg-primary" />
-            <span className="text-lg font-bold tracking-tighter uppercase">RAVETURE</span>
+    <footer className="relative border-t border-white/10 bg-bg-dark">
+      {/* Colophon strip */}
+      <div className="border-b border-white/10">
+        <div className="max-w-[1440px] mx-auto px-6 sm:px-10 h-9 flex items-center gap-5 text-[10px] font-mono tracking-[0.22em] uppercase text-white/50">
+          <span className="text-primary text-xs leading-none">◆</span>
+          <span className="text-white/80 font-medium">Colophon</span>
+          <span className="opacity-40">/</span>
+          <span>Bulletin Nº 007</span>
+          <span className="opacity-40 hidden sm:inline">·</span>
+          <span className="hidden sm:inline">48kHz / 24-bit</span>
+          <div className="ml-auto flex items-center gap-2">
+            <span className="w-1 h-1 bg-primary" />
+            <span className="hidden sm:inline">Broadcast live</span>
           </div>
+        </div>
+      </div>
 
-          {/* Links */}
-          <nav className="flex flex-wrap justify-center gap-8 text-xs font-mono uppercase text-text-muted">
-            {['Privacy', 'Terms', 'Contact'].map((item) => (
-              <a key={item} href="#" className="hover:text-primary transition-colors">
-                {item}
-              </a>
-            ))}
-          </nav>
-
-          {/* Copyright */}
-          <p className="text-xs font-mono text-text-muted">
-            © 2026 RAVETURE. All rights reserved.
+      {/* Main footer */}
+      <div className="max-w-[1440px] mx-auto px-6 sm:px-10 py-14 sm:py-16 grid grid-cols-12 gap-6 sm:gap-10">
+        {/* Lockup + statement */}
+        <div className="col-span-12 sm:col-span-6 lg:col-span-5">
+          <Link to="/" className="flex items-center gap-2.5 mb-5">
+            <div className="w-6 h-6 bg-primary" />
+            <span className="text-base font-bold tracking-tight uppercase">RAVETURE</span>
+          </Link>
+          <p className="text-white/55 text-[14px] leading-[1.65] max-w-sm">
+            Ticketing, archive and broadcast infrastructure for underground electronic music.
+            Built so the scene can keep its own receipts.
           </p>
+        </div>
+
+        {/* Sections */}
+        <nav className="col-span-6 sm:col-span-3 lg:col-span-2">
+          <div className="text-[10px] font-mono tracking-[0.22em] uppercase text-primary mb-4">
+            § Programme
+          </div>
+          <ul className="space-y-2.5 text-[13px]">
+            <li><Link to="/events" className="text-white/70 hover:text-white transition-colors">Events</Link></li>
+            <li><Link to="/magazine" className="text-white/70 hover:text-white transition-colors">Magazine</Link></li>
+            <li><Link to="/my-tickets" className="text-white/70 hover:text-white transition-colors">My tickets</Link></li>
+          </ul>
+        </nav>
+
+        <nav className="col-span-6 sm:col-span-3 lg:col-span-2">
+          <div className="text-[10px] font-mono tracking-[0.22em] uppercase text-primary mb-4">
+            § House
+          </div>
+          <ul className="space-y-2.5 text-[13px]">
+            <li><a href="#" className="text-white/70 hover:text-white transition-colors">Privacy</a></li>
+            <li><a href="#" className="text-white/70 hover:text-white transition-colors">Terms</a></li>
+            <li><a href="#" className="text-white/70 hover:text-white transition-colors">Contact</a></li>
+          </ul>
+        </nav>
+
+        {/* Signal off */}
+        <div className="col-span-12 lg:col-span-3 flex flex-col items-start lg:items-end justify-between gap-4">
+          <div className="text-[10px] font-mono tracking-[0.22em] uppercase text-white/40">
+            <span className="text-primary">—</span> Est. 2025
+          </div>
+          <div className="text-[10px] font-mono tracking-[0.22em] uppercase text-white/40 tabular-nums">
+            © {year} RAVETURE
+          </div>
         </div>
       </div>
     </footer>
@@ -688,7 +823,13 @@ interface PageWrapperProps {
   className?: string
 }
 
-export function PageWrapper({ children, showNavbar = true, showFooter = true, transparentNavbar = false, className }: PageWrapperProps) {
+export function PageWrapper({
+  children,
+  showNavbar = true,
+  showFooter = true,
+  transparentNavbar = false,
+  className,
+}: PageWrapperProps) {
   return (
     <div className={cn('relative min-h-screen bg-bg-dark text-white overflow-x-hidden', className)}>
       <AnimatedBackground />

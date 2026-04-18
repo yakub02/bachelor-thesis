@@ -159,7 +159,7 @@ export function TicketTypeManager({
   }
 
   return (
-    <Card hover={false} className={cn('p-6', className)}>
+    <Card className={cn('p-6', className)}>
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-primary">confirmation_number</span>
@@ -182,7 +182,7 @@ export function TicketTypeManager({
 
       {/* Create Form */}
       {showCreateForm && (
-        <div className="mb-6 p-4 border border-border-grey rounded-lg space-y-4">
+        <div className="mb-6 p-4 border border-border-grey space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <Input
               label="Name *"
@@ -259,7 +259,7 @@ export function TicketTypeManager({
             <div
               key={tt.id}
               className={cn(
-                'p-4 border rounded-lg',
+                'p-4 border',
                 tt.is_active ? 'border-border-grey' : 'border-border-grey/50 opacity-60'
               )}
             >
@@ -272,7 +272,7 @@ export function TicketTypeManager({
                       <span className="text-text-muted text-sm">
                         {formatPrice(tt.price_cents)}
                       </span>
-                      <span className="text-xs px-2 py-0.5 bg-text-muted/20 text-text-muted rounded">
+                      <span className="text-xs px-2 py-0.5 bg-text-muted/20 text-text-muted">
                         Name & price are immutable
                       </span>
                     </div>
@@ -342,17 +342,17 @@ export function TicketTypeManager({
                       <div className="flex items-center gap-2">
                         <h4 className="font-mono font-bold">{tt.name}</h4>
                         {!tt.is_active && (
-                          <span className="text-xs px-2 py-0.5 bg-text-muted/20 text-text-muted rounded">
+                          <span className="text-xs px-2 py-0.5 bg-text-muted/20 text-text-muted">
                             Inactive
                           </span>
                         )}
                         {isSoldOut && tt.is_active && (
-                          <span className="text-xs px-2 py-0.5 bg-error/20 text-error rounded">
+                          <span className="text-xs px-2 py-0.5 bg-error/20 text-error">
                             Sold Out
                           </span>
                         )}
                         {isAlmostSoldOut && !isSoldOut && tt.is_active && (
-                          <span className="text-xs px-2 py-0.5 bg-yellow-400/20 text-yellow-400 rounded">
+                          <span className="text-xs px-2 py-0.5 bg-yellow-400/20 text-yellow-400">
                             Almost Sold Out
                           </span>
                         )}
@@ -411,7 +411,7 @@ export function TicketTypeManager({
                       </span>
                     </div>
 
-                    <div className="h-2 bg-bg-dark rounded-full overflow-hidden">
+                    <div className="h-2 bg-bg-dark overflow-hidden">
                       <div
                         className={cn(
                           'h-full transition-all duration-500',

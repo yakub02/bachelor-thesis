@@ -54,7 +54,6 @@ export function VenueSelector({ value, onChange, className }: VenueSelectorProps
         const response = await ravetureApi.getVenues()
         setVenues(response.venues)
       } catch (err) {
-        console.error('Failed to fetch venues:', err)
         setError('Failed to load venues')
       } finally {
         setLoading(false)
@@ -79,7 +78,7 @@ export function VenueSelector({ value, onChange, className }: VenueSelectorProps
         city: newVenue.city,
         address: newVenue.address || undefined,
         country: newVenue.country,
-        capacity: newVenue.capacity ? parseInt(newVenue.capacity) : undefined,
+        capacity: newVenue.capacity ? (parseInt(newVenue.capacity) || undefined) : undefined,
         description: newVenue.description || undefined,
       })
 
@@ -98,7 +97,6 @@ export function VenueSelector({ value, onChange, className }: VenueSelectorProps
       })
       setShowCreateForm(false)
     } catch (err: unknown) {
-      console.error('Failed to create venue:', err)
       const error = err as { error?: string; message?: string }
       setCreateError(error.error || error.message || 'Failed to create venue')
     } finally {

@@ -31,7 +31,7 @@ export function StatCard({
   }
 
   return (
-    <Card hover={false} className={cn('p-6', className)}>
+    <Card className={cn('p-6', className)}>
       <div className="flex items-start justify-between">
         <div>
           <p className="text-text-muted text-xs font-mono uppercase">{title}</p>
@@ -63,7 +63,7 @@ export function StatCard({
             </div>
           )}
         </div>
-        <div className={cn('p-3 rounded-lg bg-primary/10', variantColors[variant])}>
+        <div className={cn('p-3 bg-primary/10', variantColors[variant])}>
           <span className="material-symbols-outlined text-2xl">{icon}</span>
         </div>
       </div>
