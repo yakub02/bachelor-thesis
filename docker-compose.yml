@@ -1,0 +1,90 @@
+services:
+
+  # ── PostgreSQL pro hlavní backend ──────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: raveture_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ── PostgreSQL pro ticketing service ───────────────────────────────────────
+  ticketing_db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: ticketing_db
+    volumes:
+      - ticketing_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ── Hlavní backend (Flask, port 5050) ──────────────────────────────────────
+  backend:
+    build:
+      context: ./raveture/backend
+    ports:
+      - "5050:5050"
+    environment:
+      FLASK_ENV: development
+      FLASK_PORT: "5050"
+      DATABASE_URL: postgresql://postgres:root@db:5432/raveture_db
+      SECRET_KEY: docker-dev-secret-raveture-backend
+      JWT_SECRET_KEY: docker-dev-jwt-raveture-backend
+      CORS_ORIGINS: "http://localhost:3000"
+      TICKETING_SERVICE_URL: http://ticketing:5001
+      UPLOAD_FOLDER: /app/uploads
+      UPLOAD_URL_BASE: /uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - backend_uploads:/app/uploads
+
+  # ── Ticketing service (Flask, port 5001) ───────────────────────────────────
+  ticketing:
+    build:
+      context: ./ticketing-service
+    ports:
+      - "5001:5001"
+    environment:
+      FLASK_ENV: development
+      FLASK_PORT: "5001"
+      DATABASE_URL: postgresql://postgres:root@ticketing_db:5432/ticketing_db
+      SECRET_KEY: docker-dev-secret-ticketing
+      JWT_SECRET_KEY: docker-dev-jwt-ticketing
+      QR_SIGNING_KEY: docker-dev-qr-signing-key-32chars!!
+    depends_on:
+      ticketing_db:
+        condition: service_healthy
+
+  # ── Frontend (Vite dev server, port 3000) ──────────────────────────────────
+  frontend:
+    build:
+      context: ./raveture/frontend
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_RAVETURE_API_URL: http://localhost:5050
+      VITE_TICKETING_API_URL: http://localhost:5001
+      VITE_TICKETING_API_KEY: rt_dev_docker_key
+      VITE_USE_GOPAY: "false"
+    depends_on:
+      - backend
+      - ticketing
+
+volumes:
+  postgres_data:
+  ticketing_postgres_data:
+  backend_uploads:
