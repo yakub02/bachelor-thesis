@@ -64,3 +64,5 @@ README.md
 raveture/backend/.env.example
 raveture/frontend/.impeccable.md
 summary.txt
+ticketing-service/coverage.xml
+ticketing-service/.coverage
