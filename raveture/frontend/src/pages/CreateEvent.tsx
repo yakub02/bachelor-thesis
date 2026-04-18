@@ -100,6 +100,11 @@ export function CreateEvent() {
       return
     }
 
+    if (eventData.ends_at && eventData.ends_at <= eventData.starts_at) {
+      setError('End date must be after start date')
+      return
+    }
+
     setIsLoading(true)
 
     try {
@@ -126,7 +131,6 @@ export function CreateEvent() {
         navigate('/my-events')
       }
     } catch (err: unknown) {
-      console.error('Event creation error:', err)
       if (err && typeof err === 'object' && 'error' in err) {
         setError((err as { error: string }).error)
       } else if (err && typeof err === 'object' && 'message' in err) {
@@ -165,7 +169,6 @@ export function CreateEvent() {
       await ravetureApi.updateEvent(createdEventId, { status: 'published' })
       navigate('/my-events')
     } catch (err: unknown) {
-      console.error('Ticket creation error:', err)
       if (err && typeof err === 'object' && 'error' in err) {
         setError((err as { error: string }).error)
       } else {
@@ -253,11 +256,11 @@ export function CreateEvent() {
                 />
 
                 <ImageUpload
-                  label="Cover Image"
+                  label="Flyer (1080 × 1440, 3:4)"
                   value={eventData.cover_image_url || null}
                   onChange={(url) => setEventData(prev => ({ ...prev, cover_image_url: url || '' }))}
                   category="events"
-                  aspectRatio="video"
+                  aspectRatio="flyer"
                 />
 
                 <GlowInput

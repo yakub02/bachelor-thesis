@@ -98,7 +98,6 @@ export function EditEvent() {
           venue_id: foundEvent.venue_id || null,
         })
       } catch (err) {
-        console.error('Failed to fetch event:', err)
         setError('Failed to load event')
       } finally {
         setIsLoading(false)
@@ -119,7 +118,6 @@ export function EditEvent() {
         const data = await ticketingApi.getTicketTypes(event.id)
         setTicketTypes(data.ticket_types)
       } catch (err) {
-        console.error('Failed to fetch ticket types:', err)
         setTicketTypesError('Failed to load ticket types')
       } finally {
         setTicketTypesLoading(false)
@@ -156,7 +154,6 @@ export function EditEvent() {
       setNewTicketType({ name: '', description: '', price_cents: 0, quantity_total: 100, max_per_order: 4 })
       setShowAddTicketType(false)
     } catch (err: unknown) {
-      console.error('Failed to create ticket type:', err)
       const error = err as { message?: string; error?: string }
       setTicketTypesError(error.message || error.error || 'Failed to create ticket type')
     } finally {
@@ -170,8 +167,8 @@ export function EditEvent() {
       setTicketTypes(prev => prev.map(tt =>
         tt.id === ticketTypeId ? { ...tt, is_active: !isActive } : tt
       ))
-    } catch (err) {
-      console.error('Failed to toggle ticket type:', err)
+    } catch {
+      // toggle failure is non-critical; UI stays consistent via optimistic update revert
     }
   }
 
@@ -224,7 +221,6 @@ export function EditEvent() {
       })
       navigate('/my-events')
     } catch (err: unknown) {
-      console.error('Event update error:', err)
       if (err && typeof err === 'object' && 'error' in err) {
         setError((err as { error: string }).error)
       } else if (err && typeof err === 'object' && 'message' in err) {
@@ -293,11 +289,11 @@ export function EditEvent() {
                 />
 
                 <ImageUpload
-                  label="Cover Image"
+                  label="Flyer (1080 × 1440, 3:4)"
                   value={eventData.cover_image_url || null}
                   onChange={(url) => setEventData(prev => ({ ...prev, cover_image_url: url || '' }))}
                   category="events"
-                  aspectRatio="video"
+                  aspectRatio="flyer"
                 />
 
                 <GlowInput

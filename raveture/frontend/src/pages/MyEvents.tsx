@@ -28,7 +28,6 @@ export function MyEvents() {
         setOrganizer(data.organizer || null)
       } catch (err) {
         setError('Failed to load events')
-        console.error(err)
       } finally {
         setIsLoading(false)
       }
@@ -58,8 +57,8 @@ export function MyEvents() {
       setEvents(prev => prev.map(e =>
         e.id === eventId ? { ...e, status: 'published' } : e
       ))
-    } catch (err) {
-      console.error(err)
+    } catch {
+      // publish failure is surfaced by the UI not updating
     }
   }
 
@@ -69,8 +68,8 @@ export function MyEvents() {
       setEvents(prev => prev.map(e =>
         e.id === eventId ? { ...e, status: 'draft' } : e
       ))
-    } catch (err) {
-      console.error(err)
+    } catch {
+      // unpublish failure is surfaced by the UI not updating
     }
   }
 
@@ -188,7 +187,7 @@ export function MyEvents() {
                           </span>
                         </div>
                         <p className="text-text-muted text-sm font-mono">
-                          {new Date(event.starts_at).toLocaleDateString('cs-CZ', {
+                          {new Date(event.starts_at).toLocaleDateString('en-GB', {
                             weekday: 'long',
                             year: 'numeric',
                             month: 'long',

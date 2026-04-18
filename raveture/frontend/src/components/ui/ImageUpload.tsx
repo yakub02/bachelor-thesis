@@ -30,7 +30,7 @@ interface ImageUploadProps {
   category?: 'events' | 'venues' | 'profiles' | 'artists'
   label?: string
   className?: string
-  aspectRatio?: 'square' | 'video' | 'banner'
+  aspectRatio?: 'square' | 'video' | 'banner' | 'flyer'
 }
 
 interface UploadState {
@@ -60,6 +60,7 @@ export function ImageUpload({
     square: 'aspect-square',
     video: 'aspect-video',
     banner: 'aspect-[3/1]',
+    flyer: 'aspect-[3/4]',
   }
 
   // Validate file

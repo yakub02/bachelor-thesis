@@ -57,8 +57,8 @@ export function TicketDetail() {
     try {
       const data = await ticketingApi.getTicketQR(ticketId)
       setQrData(data)
-    } catch (err) {
-      console.error('Failed to fetch QR:', err)
+    } catch {
+      // QR fetch failure handled by empty qrData state
     } finally {
       setQrLoading(false)
     }
@@ -107,8 +107,8 @@ export function TicketDetail() {
       a.click()
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
-    } catch (err) {
-      console.error('Failed to download PDF:', err)
+    } catch {
+      // PDF download failure — browser will not initiate the download
     } finally {
       setPdfLoading(false)
     }

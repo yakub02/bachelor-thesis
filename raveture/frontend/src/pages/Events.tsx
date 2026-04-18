@@ -1,14 +1,19 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
 import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
-import { AnimatedBackground, NewNavbar, NewFooter, GlowButton, GlowCard, GlowInput } from '@/components/design'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { Search, SlidersHorizontal, X } from 'lucide-react'
+import { NewNavbar, NewFooter } from '@/components/design'
 import { DatePicker } from '@/components/ui/date-picker'
 import { ravetureApi, type Event } from '@/services/ravetureApi'
 import { cn } from '@/utils'
+import { useLang } from '@/context'
 
-// Countries and cities data
+gsap.registerPlugin(ScrollTrigger)
+
+// ════════════════════════════ DATA ════════════════════════════
+
 const LOCATIONS = {
   'Czech Republic': ['Prague', 'Brno', 'Ostrava', 'Plzeň', 'Liberec'],
   'Germany': ['Berlin', 'Munich', 'Hamburg', 'Frankfurt', 'Cologne'],
@@ -21,152 +26,184 @@ const LOCATIONS = {
 }
 
 const GENRES = [
-  'Techno',
-  'House',
-  'Trance',
-  'Drum & Bass',
-  'Dubstep',
-  'Hardcore',
-  'Ambient',
-  'Industrial',
-  'Electro',
-  'Minimal',
-  'Progressive',
-  'Psytrance',
-]
-
-const TIME_FILTERS = [
-  { id: 'all', label: 'All Events' },
-  { id: 'today', label: 'Today' },
-  { id: 'tomorrow', label: 'Tomorrow' },
-  { id: 'this-week', label: 'This Week' },
-  { id: 'this-weekend', label: 'This Weekend' },
-  { id: 'next-week', label: 'Next Week' },
-  { id: 'this-month', label: 'This Month' },
+  'Techno', 'House', 'Trance', 'Drum & Bass', 'Dubstep', 'Hardcore',
+  'Ambient', 'Industrial', 'Electro', 'Minimal', 'Progressive', 'Psytrance',
 ]
 
 const EVENTS_PER_PAGE = 12
 
-// Enhanced Event Card with proper glow
-function EventCardEnhanced({ event }: { event: Event }) {
-  const [isHovered, setIsHovered] = useState(false)
+// ════════════════════════════ HELPERS ════════════════════════════
+
+function formatEventDate(iso: string) {
+  const d = new Date(iso)
+  const day = String(d.getDate()).padStart(2, '0')
+  const month = d.toLocaleString('en-US', { month: 'short' }).toUpperCase()
+  const year = String(d.getFullYear()).slice(-2)
+  const weekday = d.toLocaleString('en-US', { weekday: 'short' }).toUpperCase()
+  const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+  return { day, month, year, weekday, time }
+}
+
+function getDateForTimeFilter(filterId: string): string | null {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  switch (filterId) {
+    case 'today':
+      return today.toISOString().split('T')[0]
+    case 'tomorrow': {
+      const tomorrow = new Date(today)
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      return tomorrow.toISOString().split('T')[0]
+    }
+    case 'this-week':
+      return today.toISOString().split('T')[0]
+    case 'this-weekend': {
+      const dayOfWeek = today.getDay()
+      const daysUntilFriday = (5 - dayOfWeek + 7) % 7
+      const friday = new Date(today)
+      friday.setDate(friday.getDate() + daysUntilFriday)
+      return friday.toISOString().split('T')[0]
+    }
+    case 'next-week': {
+      const nextWeek = new Date(today)
+      nextWeek.setDate(nextWeek.getDate() + 7)
+      return nextWeek.toISOString().split('T')[0]
+    }
+    case 'this-month':
+      return today.toISOString().split('T')[0]
+    default:
+      return null
+  }
+}
+
+// ════════════════════════════ CARD ════════════════════════════
+
+interface EventCardProps {
+  event: Event
+  index: number
+  locale: string
+  viewLabel: string
+}
+
+function EventCard({ event, index, locale, viewLabel }: EventCardProps) {
+  const d = formatEventDate(event.starts_at)
+  const num = String(index + 1).padStart(2, '0')
 
   return (
-    <Link to={`/events/${event.id}`}>
-      <motion.div
-        onHoverStart={() => setIsHovered(true)}
-        onHoverEnd={() => setIsHovered(false)}
-        whileHover={{ y: -8 }}
-        className="relative group cursor-pointer"
+    <li data-scroll className="group/card">
+      <Link
+        to={`/events/${event.slug || event.id}`}
+        className="group block"
       >
-        <GlowCard className="overflow-hidden h-full">
-          {/* Image */}
-          <div className="relative aspect-[4/3] overflow-hidden">
-            <motion.div
-              className="absolute inset-0 bg-cover bg-center grayscale contrast-125"
-              style={{
-                backgroundImage: event.cover_image_url
-                  ? `url('${event.cover_image_url}')`
-                  : `url('https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&q=80')`,
-              }}
-              animate={{
-                scale: isHovered ? 1.1 : 1,
-                filter: isHovered ? 'grayscale(0%) contrast(100%)' : 'grayscale(100%) contrast(125%)',
-              }}
-              transition={{ duration: 0.6 }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
-
-            {/* Featured badge */}
-            {event.is_featured && (
-              <motion.div
-                className="absolute top-4 right-4 px-3 py-1 bg-primary text-black text-xs font-mono uppercase font-bold"
-                animate={{
-                  boxShadow: [
-                    '0 0 10px rgba(218,120,88,0.5)',
-                    '0 0 20px rgba(218,120,88,0.8)',
-                    '0 0 10px rgba(218,120,88,0.5)',
-                  ]
-                }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                FEATURED
-              </motion.div>
-            )}
-
-            {/* Date badge */}
-            <div className="absolute top-4 left-4 px-3 py-2 bg-black/80 backdrop-blur-sm border border-primary/30">
-              <div className="text-primary text-xl font-black">
-                {new Date(event.starts_at).getDate()}
-              </div>
-              <div className="text-white text-xs font-mono uppercase">
-                {new Date(event.starts_at).toLocaleDateString('en-US', { month: 'short' })}
-              </div>
-            </div>
-
-            {/* Genres */}
-            {event.genres && event.genres.length > 0 && (
-              <div className="absolute bottom-4 left-4 right-4 flex flex-wrap gap-2">
-                {event.genres.slice(0, 3).map((genre) => (
-                  <span
-                    key={genre}
-                    className="px-2 py-1 bg-black/60 backdrop-blur-sm border border-primary/30 text-primary text-[10px] font-mono uppercase"
-                  >
-                    {genre}
-                  </span>
-                ))}
+        {/* Flyer — 1080×1440 (3:4) */}
+        <div className="relative">
+          <div className="relative aspect-[3/4] overflow-hidden bg-graphite">
+            {event.cover_image_url ? (
+              <>
+                <img
+                  src={event.cover_image_url}
+                  alt={event.name}
+                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent pointer-events-none" />
+              </>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-primary/25">
+                <span className="font-headline text-8xl" style={{ fontWeight: 400 }}>◆</span>
               </div>
             )}
-          </div>
 
-          {/* Content */}
-          <div className="p-6">
-            <h3 className="text-xl font-bold uppercase mb-2 line-clamp-2 group-hover:text-primary transition-colors">
-              {event.name}
-            </h3>
-
-            <div className="space-y-2 text-sm text-text-muted mb-4">
-              {event.venue && (
-                <div className="flex items-center gap-2">
-                  <span className="text-primary">📍</span>
-                  <span>{event.venue.city}, {event.venue.country}</span>
-                </div>
-              )}
-              <div className="flex items-center gap-2">
-                <span className="text-primary">🕐</span>
-                <span>
-                  {new Date(event.starts_at).toLocaleDateString('en-US', {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric',
-                  })} • {new Date(event.starts_at).toLocaleTimeString('en-US', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
+            {/* Index badge */}
+            <div className="absolute top-4 left-4 right-4 flex items-start justify-between">
+              <span className="bg-white text-black text-[10px] font-mono tracking-[0.22em] uppercase tabular-nums px-2 py-1 font-semibold">
+                № {num}
+              </span>
+              {event.interested_count > 0 && (
+                <span className="bg-black/60 backdrop-blur-sm text-white/90 text-[10px] font-mono tracking-[0.22em] uppercase tabular-nums px-2 py-1">
+                  <span className="text-primary">{event.interested_count}</span> going
                 </span>
-              </div>
+              )}
             </div>
 
-            {/* CTA */}
-            <motion.div
-              className="flex items-center justify-between pt-4 border-t border-border-grey"
-              animate={{ x: isHovered ? 5 : 0 }}
-              transition={{ type: 'spring', stiffness: 300 }}
-            >
-              <span className="text-primary font-mono text-sm uppercase font-bold">View Event</span>
-              <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </motion.div>
+            {/* Date — bottom left on flyer */}
+            <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between text-white">
+              <div className="flex items-baseline gap-2.5">
+                <span
+                  className="font-headline text-5xl md:text-6xl leading-[0.85] tabular-nums drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]"
+                  style={{ fontWeight: 700 }}
+                >
+                  {d.day}
+                </span>
+                <div className="flex flex-col text-[10px] font-mono tracking-[0.22em] uppercase text-white/85 drop-shadow-[0_1px_4px_rgba(0,0,0,0.6)]">
+                  <span>{d.month}</span>
+                  <span className="opacity-70">'{d.year}</span>
+                </div>
+              </div>
+              <span className="text-[10px] font-mono tracking-[0.22em] uppercase text-white/70 tabular-nums drop-shadow-[0_1px_4px_rgba(0,0,0,0.6)]">
+                {d.weekday} · {d.time}
+              </span>
+            </div>
           </div>
-        </GlowCard>
-      </motion.div>
-    </Link>
+
+          {/* Target lock — reticle snaps OUTSIDE the flyer on hover */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 group-hover:-inset-2.5 transition-all duration-[380ms] ease-[cubic-bezier(0.22,1,0.36,1)] z-20"
+          >
+            <span className="absolute -top-px -left-px w-5 h-5 border-t border-l border-primary shadow-[0_0_8px_rgba(218,120,88,0.35)]" />
+            <span className="absolute -top-px -right-px w-5 h-5 border-t border-r border-primary shadow-[0_0_8px_rgba(218,120,88,0.35)]" />
+            <span className="absolute -bottom-px -left-px w-5 h-5 border-b border-l border-primary shadow-[0_0_8px_rgba(218,120,88,0.35)]" />
+            <span className="absolute -bottom-px -right-px w-5 h-5 border-b border-r border-primary shadow-[0_0_8px_rgba(218,120,88,0.35)]" />
+            {/* HUD tick — small locked indicator */}
+            <span className="absolute top-1/2 -left-1.5 -translate-y-1/2 w-1.5 h-px bg-primary opacity-0 group-hover:opacity-100 transition-opacity duration-200 delay-[300ms]" />
+            <span className="absolute top-1/2 -right-1.5 -translate-y-1/2 w-1.5 h-px bg-primary opacity-0 group-hover:opacity-100 transition-opacity duration-200 delay-[300ms]" />
+          </div>
+        </div>
+
+        {/* Text block below flyer */}
+        <div className="pt-4 pb-2">
+          <h3
+            className="font-headline text-xl sm:text-2xl md:text-[1.7rem] uppercase tracking-[-0.02em] leading-[0.98] text-white group-hover:text-primary transition-colors duration-300 line-clamp-2"
+            style={{ fontWeight: 700 }}
+          >
+            {event.name}
+          </h3>
+          <div className="mt-2.5 text-[11px] text-white/55 flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono tracking-wider">
+            <span className="uppercase truncate text-white/75">
+              {event.venue?.name || 'Venue TBA'}
+              {event.venue?.city && (
+                <span className="text-white/40"> · {event.venue.city}</span>
+              )}
+            </span>
+            {event.genres?.[0] && (
+              <>
+                <span className="opacity-40">/</span>
+                <span className="uppercase text-white/55">
+                  {event.genres.slice(0, 2).join(' × ')}
+                </span>
+              </>
+            )}
+          </div>
+          <div className="mt-3 flex items-center justify-between text-[10px] font-mono tracking-[0.22em] uppercase text-white/35">
+            <span className="tabular-nums">
+              {new Date(event.starts_at).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
+            </span>
+            <span className="text-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300 inline-flex items-center gap-1.5">
+              Open <span className="transition-transform duration-300 group-hover:translate-x-0.5">→</span>
+            </span>
+          </div>
+        </div>
+
+        <span className="sr-only">{viewLabel}</span>
+      </Link>
+    </li>
   )
 }
 
-// Filter Button Component
-function FilterButton({
+// ════════════════════════════ FILTER BUTTON ════════════════════════════
+
+function FilterPill({
   active,
   onClick,
   children,
@@ -176,77 +213,44 @@ function FilterButton({
   children: React.ReactNode
 }) {
   return (
-    <motion.button
+    <button
       onClick={onClick}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
       className={cn(
-        'px-4 py-2 font-mono text-sm uppercase tracking-wider transition-all duration-300',
+        'px-3.5 py-1.5 text-[10px] font-mono uppercase tracking-[0.22em] transition-colors duration-200',
         active
-          ? 'bg-primary text-black shadow-[0_0_20px_rgba(218,120,88,0.5)]'
-          : 'bg-graphite border border-border-grey text-text-muted hover:border-primary hover:text-white'
+          ? 'bg-white text-black'
+          : 'border border-white/15 text-white/60 hover:border-white/40 hover:text-white'
       )}
     >
       {children}
-    </motion.button>
+    </button>
   )
 }
 
-// Skeleton Loader
-function EventCardSkeleton() {
-  return (
-    <div className="bg-graphite/50 border border-border-grey overflow-hidden">
-      <div className="aspect-[4/3] bg-graphite animate-pulse" />
-      <div className="p-6 space-y-3">
-        <div className="h-6 bg-graphite animate-pulse w-3/4" />
-        <div className="h-4 bg-graphite animate-pulse w-1/2" />
-        <div className="h-4 bg-graphite animate-pulse w-2/3" />
-      </div>
-    </div>
-  )
-}
-
-// Calculate date for time filters
-function getDateForTimeFilter(filterId: string): string | null {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-
-  switch (filterId) {
-    case 'today':
-      return today.toISOString().split('T')[0]
-    case 'tomorrow':
-      const tomorrow = new Date(today)
-      tomorrow.setDate(tomorrow.getDate() + 1)
-      return tomorrow.toISOString().split('T')[0]
-    case 'this-week':
-      return today.toISOString().split('T')[0]
-    case 'this-weekend':
-      const dayOfWeek = today.getDay()
-      const daysUntilFriday = (5 - dayOfWeek + 7) % 7
-      const friday = new Date(today)
-      friday.setDate(friday.getDate() + daysUntilFriday)
-      return friday.toISOString().split('T')[0]
-    case 'next-week':
-      const nextWeek = new Date(today)
-      nextWeek.setDate(nextWeek.getDate() + 7)
-      return nextWeek.toISOString().split('T')[0]
-    case 'this-month':
-      return today.toISOString().split('T')[0]
-    default:
-      return null
-  }
-}
+// ════════════════════════════ PAGE ════════════════════════════
 
 export function Events() {
+  const { t, lang } = useLang()
+  const locale = lang === 'cs' ? 'cs-CZ' : 'en-GB'
+
+  const TIME_FILTERS = [
+    { id: 'all', label: t.events.timeAll },
+    { id: 'today', label: t.events.timeToday },
+    { id: 'tomorrow', label: t.events.timeTomorrow },
+    { id: 'this-week', label: t.events.timeWeek },
+    { id: 'this-weekend', label: t.events.timeWeekend },
+    { id: 'next-week', label: t.events.timeNextWeek },
+    { id: 'this-month', label: t.events.timeMonth },
+  ]
+
   const [events, setEvents] = useState<Event[]>([])
   const [totalEvents, setTotalEvents] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [isLoading, setIsLoading] = useState(true)
-  const [showFilters, setShowFilters] = useState(true)
-  const contentRef = useRef<HTMLDivElement>(null)
+  const [showFilters, setShowFilters] = useState(false)
+  const listRef = useRef<HTMLElement>(null)
 
-  // Filter states
   const [selectedCountry, setSelectedCountry] = useState<string>('all')
   const [selectedCity, setSelectedCity] = useState<string>('all')
   const [selectedTimeFilter, setSelectedTimeFilter] = useState<string>('all')
@@ -254,40 +258,25 @@ export function Events() {
   const [searchQuery, setSearchQuery] = useState('')
   const [customDate, setCustomDate] = useState('')
 
-  // Fetch events with backend filtering
   useEffect(() => {
     async function fetchEvents() {
       setIsLoading(true)
       try {
-        // Build API params
         const params: any = {
           page: currentPage,
           per_page: EVENTS_PER_PAGE,
         }
-
-        // Backend supports single city filter
-        if (selectedCity !== 'all') {
-          params.city = selectedCity
-        }
-
-        // Backend supports single genre filter
-        if (selectedGenre !== 'all') {
-          params.genre = selectedGenre
-        }
-
-        // Backend supports from_date
+        if (selectedCity !== 'all') params.city = selectedCity
+        if (selectedGenre !== 'all') params.genre = selectedGenre
         if (customDate) {
           params.from_date = customDate
         } else if (selectedTimeFilter !== 'all') {
           const date = getDateForTimeFilter(selectedTimeFilter)
-          if (date) {
-            params.from_date = date
-          }
+          if (date) params.from_date = date
         }
 
         const response = await ravetureApi.getEvents(params)
 
-        // Frontend filtering for search query (backend doesn't support)
         let filteredEvents = response.events
 
         if (searchQuery) {
@@ -296,7 +285,6 @@ export function Events() {
           )
         }
 
-        // Additional frontend filtering for time ranges (backend only supports from_date)
         if (selectedTimeFilter !== 'all' && !customDate) {
           const today = new Date()
           today.setHours(0, 0, 0, 0)
@@ -306,21 +294,24 @@ export function Events() {
             eventDate.setHours(0, 0, 0, 0)
 
             switch (selectedTimeFilter) {
-              case 'today':
+              case 'today': {
                 const tomorrow = new Date(today)
                 tomorrow.setDate(tomorrow.getDate() + 1)
                 return eventDate >= today && eventDate < tomorrow
-              case 'tomorrow':
+              }
+              case 'tomorrow': {
                 const dayAfter = new Date(today)
                 dayAfter.setDate(dayAfter.getDate() + 2)
                 const tomorrowStart = new Date(today)
                 tomorrowStart.setDate(tomorrowStart.getDate() + 1)
                 return eventDate >= tomorrowStart && eventDate < dayAfter
-              case 'this-week':
+              }
+              case 'this-week': {
                 const weekEnd = new Date(today)
                 weekEnd.setDate(weekEnd.getDate() + 7)
                 return eventDate >= today && eventDate < weekEnd
-              case 'this-weekend':
+              }
+              case 'this-weekend': {
                 const dayOfWeek = today.getDay()
                 const daysUntilFriday = (5 - dayOfWeek + 7) % 7
                 const friday = new Date(today)
@@ -328,15 +319,18 @@ export function Events() {
                 const monday = new Date(friday)
                 monday.setDate(monday.getDate() + 3)
                 return eventDate >= friday && eventDate < monday
-              case 'next-week':
+              }
+              case 'next-week': {
                 const nextWeekStart = new Date(today)
                 nextWeekStart.setDate(nextWeekStart.getDate() + 7)
                 const nextWeekEnd = new Date(nextWeekStart)
                 nextWeekEnd.setDate(nextWeekEnd.getDate() + 7)
                 return eventDate >= nextWeekStart && eventDate < nextWeekEnd
-              case 'this-month':
+              }
+              case 'this-month': {
                 const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0)
                 return eventDate >= today && eventDate <= monthEnd
+              }
               default:
                 return true
             }
@@ -346,8 +340,8 @@ export function Events() {
         setEvents(filteredEvents)
         setTotalEvents(response.total)
         setTotalPages(response.pages)
-      } catch (err) {
-        console.error('Failed to fetch events:', err)
+      } catch {
+        // events fail silently; list renders empty state
       } finally {
         setIsLoading(false)
       }
@@ -355,26 +349,32 @@ export function Events() {
     fetchEvents()
   }, [currentPage, selectedCity, selectedGenre, selectedTimeFilter, customDate, searchQuery])
 
-  // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1)
   }, [selectedCity, selectedGenre, selectedTimeFilter, customDate, searchQuery])
 
-  // Animations
+  // Scroll reveals — same pattern as Home
   useGSAP(() => {
-    if (contentRef.current && !isLoading) {
-      gsap.fromTo(
-        '.filter-section',
-        { opacity: 0, y: -20 },
-        { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }
-      )
-      gsap.fromTo(
-        '.events-grid',
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.8, delay: 0.3, ease: 'power3.out' }
-      )
-    }
-  }, [isLoading, events])
+    const section = listRef.current
+    if (!section) return
+    const items = section.querySelectorAll<HTMLElement>('[data-scroll]')
+    gsap.fromTo(
+      items,
+      { opacity: 0, y: 24 },
+      {
+        opacity: 1,
+        y: 0,
+        duration: 0.7,
+        stagger: 0.04,
+        ease: 'power3.out',
+        scrollTrigger: {
+          trigger: section,
+          start: 'top 85%',
+          toggleActions: 'play none none reverse',
+        },
+      }
+    )
+  }, [events.length])
 
   const resetFilters = () => {
     setSelectedCountry('all')
@@ -396,302 +396,298 @@ export function Events() {
 
   return (
     <div className="relative min-h-screen bg-bg-dark text-white overflow-x-hidden">
-      <AnimatedBackground />
       <NewNavbar />
 
-      <main ref={contentRef} className="pt-24 pb-16">
-        <div className="max-w-7xl mx-auto px-6">
-          {/* Header */}
-          <motion.div
-            className="mb-12 text-center"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            
-            <h1 className="text-6xl md:text-7xl font-black uppercase tracking-tighter mb-4">
-              All <span className="text-primary">Events</span>
-            </h1>
-            <p className="text-text-secondary text-lg max-w-2xl mx-auto">
-              Production-ready filtering with backend API integration
-            </p>
-          </motion.div>
+      <main className="pt-24 pb-20">
+        {/* Issue strip */}
+        <div className="border-b border-white/10">
+          <div className="max-w-[1440px] mx-auto px-6 sm:px-10 h-9 flex items-center gap-5 text-[10px] font-mono tracking-[0.22em] uppercase text-white/50 tabular-nums">
+            <span className="text-primary text-xs leading-none">◆</span>
+            <span className="text-white font-medium">Programme</span>
+            <span className="opacity-40">/</span>
+            <span>Nights on rotation</span>
+            <div className="ml-auto flex items-center gap-2">
+              <span className="w-1 h-1 bg-primary" />
+              <span className="hidden sm:inline tabular-nums">
+                <span className="text-white">{String(totalEvents).padStart(3, '0')}</span> listed
+              </span>
+            </div>
+          </div>
+        </div>
 
-          {/* Search Bar */}
-          <motion.div
-            className="filter-section mb-8"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
-            <div className="flex gap-4 items-center">
-              <div className="flex-1">
-                <GlowInput
-                  placeholder="Search events..."
+        {/* Header */}
+        <section className="border-b border-white/10">
+          <div className="max-w-[1440px] mx-auto px-6 sm:px-10 pt-14 pb-10 sm:pt-20 sm:pb-12">
+            <div className="text-[10px] font-mono tracking-[0.22em] uppercase text-primary mb-5">
+              § 01 / The Index
+            </div>
+            <div className="grid grid-cols-12 gap-6 sm:gap-10 items-end">
+              <h1
+                className="col-span-12 md:col-span-8 font-headline text-[clamp(1.75rem,7vw,5.5rem)] leading-[0.95] tracking-[-0.035em] uppercase"
+                style={{ fontWeight: 700 }}
+              >
+                Every night on the <span className="text-primary">board.</span>
+              </h1>
+              <p className="col-span-12 md:col-span-4 text-sm md:text-[15px] leading-[1.65] text-white/60 max-w-md">
+                Filter by city, tempo, date. The programme keeps itself — what happened, what's next.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Search + filter toggle */}
+        <section className="border-b border-white/10">
+          <div className="max-w-[1440px] mx-auto px-6 sm:px-10 py-6">
+            <div className="flex items-center gap-3">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                <input
+                  type="search"
+                  placeholder={t.events.searchPlaceholder || 'Search the index…'}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full"
+                  className="w-full bg-transparent border border-white/15 focus:border-white/60 pl-10 pr-4 py-3 text-sm placeholder-white/30 text-white transition-colors focus:outline-none"
                 />
               </div>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setShowFilters(!showFilters)}
-                className="px-6 py-3 bg-graphite border border-border-grey hover:border-primary transition-colors font-mono uppercase text-sm flex items-center gap-2"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                </svg>
-                Filters
-                {activeFiltersCount > 0 && (
-                  <span className="px-2 py-1 bg-primary text-black text-xs font-bold rounded-full">
-                    {activeFiltersCount}
-                  </span>
+
+              <button
+                onClick={() => setShowFilters((v) => !v)}
+                className={cn(
+                  'inline-flex items-center gap-2.5 px-4 py-3 text-[10px] font-mono tracking-[0.22em] uppercase border transition-colors duration-200',
+                  showFilters
+                    ? 'border-white text-white'
+                    : 'border-white/15 text-white/70 hover:border-white/40 hover:text-white'
                 )}
-              </motion.button>
-            </div>
-          </motion.div>
-
-          {/* Filters Panel */}
-          <AnimatePresence>
-            {showFilters && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                className="overflow-hidden"
+                aria-expanded={showFilters}
               >
-                <GlowCard className="p-8 mb-8 filter-section">
-                  {/* Time Filters */}
-                  <div className="mb-8">
-                    <h3 className="text-sm font-bold uppercase mb-4 flex items-center gap-2">
-                      <span className="text-primary">◆</span>
-                      When
-                    </h3>
-                    <div className="flex flex-wrap gap-3">
-                      {TIME_FILTERS.map((filter) => (
-                        <FilterButton
-                          key={filter.id}
-                          active={selectedTimeFilter === filter.id}
-                          onClick={() => {
-                            setSelectedTimeFilter(filter.id)
-                            setCustomDate('')
-                          }}
-                        >
-                          {filter.label}
-                        </FilterButton>
-                      ))}
-                    </div>
-                    <div className="mt-4">
-                      <label className="block text-xs font-mono text-text-muted uppercase mb-2">
-                        Or choose specific date:
-                      </label>
-                      <DatePicker
-                        value={customDate}
-                        onChange={(date) => {
-                          setCustomDate(date)
-                          setSelectedTimeFilter('all')
-                        }}
-                        placeholder="Select a date"
-                      />
-                    </div>
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{t.events.filters}</span>
+                {activeFiltersCount > 0 && (
+                  <span className="text-primary tabular-nums">· {activeFiltersCount}</span>
+                )}
+              </button>
+            </div>
+
+            {/* Quick time pills */}
+            <div className="mt-5 flex flex-wrap gap-1.5">
+              {TIME_FILTERS.map((filter) => (
+                <FilterPill
+                  key={filter.id}
+                  active={selectedTimeFilter === filter.id}
+                  onClick={() => {
+                    setSelectedTimeFilter(filter.id)
+                    setCustomDate('')
+                  }}
+                >
+                  {filter.label}
+                </FilterPill>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Advanced filters — collapsed */}
+        {showFilters && (
+          <section className="border-b border-white/10">
+            <div className="max-w-[1440px] mx-auto px-6 sm:px-10 py-8 grid grid-cols-12 gap-6 sm:gap-10">
+              {/* Date */}
+              <div className="col-span-12 md:col-span-4">
+                <div className="text-[10px] font-mono tracking-[0.22em] uppercase text-primary mb-3">
+                  § Date
+                </div>
+                <DatePicker
+                  value={customDate}
+                  onChange={(date) => {
+                    setCustomDate(date)
+                    setSelectedTimeFilter('all')
+                  }}
+                  placeholder={t.events.selectDate}
+                />
+              </div>
+
+              {/* Location */}
+              <div className="col-span-12 md:col-span-5 grid grid-cols-2 gap-4">
+                <div>
+                  <div className="text-[10px] font-mono tracking-[0.22em] uppercase text-primary mb-3">
+                    § Country
                   </div>
-
-                  {/* Location Filters */}
-                  <div className="mb-8">
-                    <h3 className="text-sm font-bold uppercase mb-4 flex items-center gap-2">
-                      <span className="text-primary">◆</span>
-                      Where
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* Country */}
-                      <div>
-                        <label className="block text-xs font-mono text-text-muted uppercase mb-2">
-                          Country
-                        </label>
-                        <select
-                          value={selectedCountry}
-                          onChange={(e) => {
-                            setSelectedCountry(e.target.value)
-                            setSelectedCity('all')
-                          }}
-                          className="w-full px-4 py-3 bg-graphite border border-border-grey text-white font-mono focus:border-primary focus:outline-none transition-colors"
-                        >
-                          <option value="all">All Countries</option>
-                          {Object.keys(LOCATIONS).map((country) => (
-                            <option key={country} value={country}>
-                              {country}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {/* City */}
-                      <div>
-                        <label className="block text-xs font-mono text-text-muted uppercase mb-2">
-                          City
-                        </label>
-                        <select
-                          value={selectedCity}
-                          onChange={(e) => setSelectedCity(e.target.value)}
-                          disabled={selectedCountry === 'all'}
-                          className="w-full px-4 py-3 bg-graphite border border-border-grey text-white font-mono focus:border-primary focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <option value="all">All Cities</option>
-                          {selectedCountry !== 'all' &&
-                            LOCATIONS[selectedCountry as keyof typeof LOCATIONS]?.map((city) => (
-                              <option key={city} value={city}>
-                                {city}
-                              </option>
-                            ))}
-                        </select>
-                      </div>
-                    </div>
+                  <select
+                    value={selectedCountry}
+                    onChange={(e) => {
+                      setSelectedCountry(e.target.value)
+                      setSelectedCity('all')
+                    }}
+                    className="w-full px-3.5 py-3 bg-transparent border border-white/15 focus:border-white/60 text-white text-sm focus:outline-none transition-colors"
+                  >
+                    <option value="all">{t.events.allCountries}</option>
+                    {Object.keys(LOCATIONS).map((country) => (
+                      <option key={country} value={country}>
+                        {country}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <div className="text-[10px] font-mono tracking-[0.22em] uppercase text-primary mb-3">
+                    § City
                   </div>
-
-                  {/* Genre Filter */}
-                  <div className="mb-6">
-                    <h3 className="text-sm font-bold uppercase mb-4 flex items-center gap-2">
-                      <span className="text-primary">◆</span>
-                      Genre
-                    </h3>
-                    <select
-                      value={selectedGenre}
-                      onChange={(e) => setSelectedGenre(e.target.value)}
-                      className="w-full px-4 py-3 bg-graphite border border-border-grey text-white font-mono focus:border-primary focus:outline-none transition-colors"
-                    >
-                      <option value="all">All Genres</option>
-                      {GENRES.map((genre) => (
-                        <option key={genre} value={genre}>
-                          {genre}
+                  <select
+                    value={selectedCity}
+                    onChange={(e) => setSelectedCity(e.target.value)}
+                    disabled={selectedCountry === 'all'}
+                    className="w-full px-3.5 py-3 bg-transparent border border-white/15 focus:border-white/60 text-white text-sm focus:outline-none transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <option value="all">{t.events.allCities}</option>
+                    {selectedCountry !== 'all' &&
+                      LOCATIONS[selectedCountry as keyof typeof LOCATIONS]?.map((city) => (
+                        <option key={city} value={city}>
+                          {city}
                         </option>
                       ))}
-                    </select>
-                  </div>
+                  </select>
+                </div>
+              </div>
 
-                  {/* Reset Button */}
-                  {activeFiltersCount > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="pt-6 border-t border-border-grey"
-                    >
-                      <GlowButton variant="outline" onClick={resetFilters}>
-                        Reset All Filters
-                      </GlowButton>
-                    </motion.div>
-                  )}
-                </GlowCard>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              {/* Genre */}
+              <div className="col-span-12 md:col-span-3">
+                <div className="text-[10px] font-mono tracking-[0.22em] uppercase text-primary mb-3">
+                  § Tempo
+                </div>
+                <select
+                  value={selectedGenre}
+                  onChange={(e) => setSelectedGenre(e.target.value)}
+                  className="w-full px-3.5 py-3 bg-transparent border border-white/15 focus:border-white/60 text-white text-sm focus:outline-none transition-colors"
+                >
+                  <option value="all">{t.events.allGenres}</option>
+                  {GENRES.map((genre) => (
+                    <option key={genre} value={genre}>
+                      {genre}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-          {/* Results Count & Pagination Info */}
-          <motion.div
-            className="mb-8 flex items-center justify-between filter-section"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
-            <p className="text-text-muted font-mono">
+              {activeFiltersCount > 0 && (
+                <div className="col-span-12 pt-5 border-t border-white/10">
+                  <button
+                    onClick={resetFilters}
+                    className="inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.2em] uppercase text-white/60 hover:text-white transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    {t.events.clearAll}
+                  </button>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* Result count */}
+        <section className="border-b border-white/10">
+          <div className="max-w-[1440px] mx-auto px-6 sm:px-10 py-5 flex items-center justify-between text-[10px] font-mono tracking-[0.22em] uppercase text-white/50 tabular-nums">
+            <span>
               {isLoading ? (
-                'Loading events...'
+                <>Loading…</>
               ) : (
                 <>
-                  Showing <span className="text-primary font-bold">{events.length}</span> events
+                  <span className="text-white">{String(events.length).padStart(2, '0')}</span> shown
                   {totalEvents > 0 && (
                     <>
-                      {' '}• Page <span className="text-white font-bold">{currentPage}</span> of{' '}
-                      <span className="text-white font-bold">{totalPages}</span>
+                      <span className="opacity-40 mx-2">/</span>
+                      <span className="text-white">{String(totalEvents).padStart(3, '0')}</span> total
                     </>
                   )}
                 </>
               )}
-            </p>
-          </motion.div>
+            </span>
+            {totalPages > 1 && (
+              <span>
+                Page <span className="text-white">{currentPage}</span>
+                <span className="opacity-40 mx-2">/</span>
+                <span className="text-white">{totalPages}</span>
+              </span>
+            )}
+          </div>
+        </section>
 
-          {/* Events Grid */}
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 events-grid">
-              {[...Array(EVENTS_PER_PAGE)].map((_, i) => (
-                <EventCardSkeleton key={i} />
-              ))}
-            </div>
-          ) : events.length > 0 ? (
-            <>
-              <motion.div
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 events-grid mb-12"
-                initial="hidden"
-                animate="visible"
-                variants={{
-                  visible: {
-                    transition: { staggerChildren: 0.05 }
-                  }
-                }}
-              >
-                {events.map((event) => (
-                  <motion.div
-                    key={event.id}
-                    variants={{
-                      hidden: { opacity: 0, y: 20 },
-                      visible: { opacity: 1, y: 0 }
-                    }}
-                  >
-                    <EventCardEnhanced event={event} />
-                  </motion.div>
+        {/* List */}
+        <section ref={listRef} className="border-b border-white/10">
+          <div className="max-w-[1440px] mx-auto px-6 sm:px-10 py-12 sm:py-16">
+            {isLoading ? (
+              <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-12">
+                {[...Array(6)].map((_, i) => (
+                  <li key={i}>
+                    <div className="aspect-[3/4] bg-white/5 animate-pulse" />
+                    <div className="pt-4 space-y-3">
+                      <div className="h-6 bg-white/5 animate-pulse w-3/4" />
+                      <div className="h-3 bg-white/5 animate-pulse w-1/2" />
+                    </div>
+                  </li>
                 ))}
-              </motion.div>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <motion.div
-                  className="flex justify-center items-center gap-4"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
+              </ul>
+            ) : events.length > 0 ? (
+              <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-12">
+                {events.map((event, i) => (
+                  <EventCard
+                    key={event.id}
+                    event={event}
+                    index={i + (currentPage - 1) * EVENTS_PER_PAGE}
+                    locale={locale}
+                    viewLabel={t.events.viewEvent}
+                  />
+                ))}
+              </ul>
+            ) : (
+              <div className="py-16 text-center">
+                <div
+                  className="font-headline text-4xl sm:text-5xl uppercase text-white/20"
+                  style={{ fontWeight: 700 }}
                 >
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="px-6 py-3 bg-graphite border border-border-grey hover:border-primary transition-colors font-mono uppercase text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-border-grey"
-                  >
-                    ← Previous
-                  </motion.button>
-
-                  <span className="text-text-muted font-mono">
-                    Page {currentPage} of {totalPages}
-                  </span>
-
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className="px-6 py-3 bg-graphite border border-border-grey hover:border-primary transition-colors font-mono uppercase text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-border-grey"
-                  >
-                    Next →
-                  </motion.button>
-                </motion.div>
-              )}
-            </>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center py-20"
-            >
-              <GlowCard className="p-12 max-w-md mx-auto">
-                <div className="text-6xl mb-4">🎵</div>
-                <h3 className="text-2xl font-bold mb-2">No Events Found</h3>
-                <p className="text-text-muted mb-6">
-                  Try adjusting your filters or search query
+                  Quiet week.
+                </div>
+                <p className="text-sm text-white/50 mt-4 font-mono tracking-wider uppercase text-[11px]">
+                  Nothing matches those filters. Try casting a wider net.
                 </p>
-                <GlowButton variant="outline" onClick={resetFilters}>
-                  Reset Filters
-                </GlowButton>
-              </GlowCard>
-            </motion.div>
-          )}
-        </div>
+                <button
+                  onClick={resetFilters}
+                  className="mt-6 inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.2em] uppercase text-white/60 hover:text-white transition-colors border-b border-white/20 hover:border-white pb-0.5"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  {t.events.clearAll}
+                </button>
+              </div>
+            )}
+
+            {/* Pagination */}
+            {totalPages > 1 && events.length > 0 && (
+              <div className="mt-10 flex items-center justify-between gap-4 border-t border-white/10 pt-6">
+                <button
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="inline-flex items-center gap-3 text-[11px] font-mono tracking-[0.2em] uppercase text-white/70 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <span>←</span>
+                  <span>{t.events.prevPage}</span>
+                </button>
+
+                <span className="text-[10px] font-mono tracking-[0.22em] uppercase text-white/40 tabular-nums">
+                  <span className="text-white">{String(currentPage).padStart(2, '0')}</span>
+                  <span className="opacity-50 mx-2">/</span>
+                  <span>{String(totalPages).padStart(2, '0')}</span>
+                </span>
+
+                <button
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="inline-flex items-center gap-3 text-[11px] font-mono tracking-[0.2em] uppercase text-white/70 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <span>{t.events.nextPage}</span>
+                  <span>→</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </section>
       </main>
 
       <NewFooter />

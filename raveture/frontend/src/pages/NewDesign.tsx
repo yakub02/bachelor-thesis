@@ -240,8 +240,8 @@ export function NewDesign() {
       try {
         const response = await ravetureApi.getEvents({ per_page: 6 })
         setEvents(response.events)
-      } catch (err) {
-        console.error('Failed to fetch events:', err)
+      } catch {
+        // events fail silently; page renders without data
       } finally {
         setTimeout(() => setIsLoading(false), 1000) // Simulate loading
       }

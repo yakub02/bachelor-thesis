@@ -14,11 +14,10 @@ export function EventCard({ eventId, title, location, date, bpm, imageUrl, class
       {/* Image Container */}
       <div
         className={cn(
-          'aspect-[4/5]',
+          'aspect-[3/4]',
           'bg-cover bg-center',
-          'grayscale contrast-125',
-          'hover:grayscale-0',
-          'transition-all duration-500'
+          'hover:scale-[1.02]',
+          'transition-transform duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)]'
         )}
         style={{ backgroundImage: `url('${imageUrl}')` }}
       />

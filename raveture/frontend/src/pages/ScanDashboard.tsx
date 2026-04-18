@@ -60,8 +60,7 @@ export function ScanDashboard() {
       if (loading) {
         setLoading(false);
       }
-    } catch (error) {
-      console.error('Failed to fetch scan data:', error);
+    } catch {
       if (loading) {
         setLoading(false);
       }

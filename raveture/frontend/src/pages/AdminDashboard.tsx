@@ -94,11 +94,13 @@ export function AdminDashboard() {
       setPicksLoading(true)
       Promise.all([
         ravetureApi.getPicks(),
-        ravetureApi.getEvents({ status: 'published', per_page: 100 }),
+        ravetureApi.getEvents({ status: 'published' }),
       ]).then(([picksData, eventsData]) => {
         setPicks(picksData.featured_events)
         setPublishedEvents(eventsData.events)
-      }).catch(() => {}).finally(() => setPicksLoading(false))
+      }).catch((e: unknown) => {
+        setPickError(e instanceof Error ? e.message : 'Failed to load picks data')
+      }).finally(() => setPicksLoading(false))
     }
   }, [activeTab])
 
@@ -125,7 +127,7 @@ export function AdminDashboard() {
       const response = await ravetureApi.getAllUsers({ search: search || undefined })
       setUsers(response.users)
     } catch (err: any) {
-      alert(err.message || 'Failed to update role')
+      setError(err.message || 'Failed to update role')
     }
   }
 
@@ -134,28 +136,26 @@ export function AdminDashboard() {
 
     try {
       await ravetureApi.banUser(userId)
-      // Refresh users
       const response = await ravetureApi.getAllUsers({ search: search || undefined })
       setUsers(response.users)
     } catch (err: any) {
-      alert(err.message || 'Failed to ban user')
+      setError(err.message || 'Failed to ban user')
     }
   }
 
   const handleUnbanUser = async (userId: string) => {
     try {
       await ravetureApi.unbanUser(userId)
-      // Refresh users
       const response = await ravetureApi.getAllUsers({ search: search || undefined })
       setUsers(response.users)
     } catch (err: any) {
-      alert(err.message || 'Failed to unban user')
+      setError(err.message || 'Failed to unban user')
     }
   }
 
   async function handleCreatePick() {
     if (!pickEventId || !pickReason.trim()) {
-      setPickError('Event a reason jsou povinné')
+      setPickError('Event and reason are required')
       return
     }
     try {
@@ -164,13 +164,13 @@ export function AdminDashboard() {
         reason: pickReason.trim(),
         expires_at: pickExpiresAt || undefined,
       })
-      setPickSuccess('RT Pick přidán!')
+      setPickSuccess('RT Pick added!')
       setPickEventId(''); setPickReason(''); setPickExpiresAt('')
       const data = await ravetureApi.getPicks()
       setPicks(data.featured_events)
       setPickError('')
     } catch (e: any) {
-      setPickError(e.message || 'Chyba při přidávání')
+      setPickError(e.message || 'Failed to add pick')
       setPickSuccess('')
     }
   }
@@ -180,7 +180,7 @@ export function AdminDashboard() {
       await ravetureApi.removePick(eventId)
       setPicks(prev => prev.filter(p => p.event_id !== eventId))
     } catch (e: any) {
-      setPickError(e.message || 'Chyba při odebírání')
+      setPickError(e.message || 'Failed to remove pick')
     }
   }
 
@@ -438,7 +438,7 @@ export function AdminDashboard() {
             <div className="space-y-8">
               {/* Add Pick Form */}
               <div className="bg-surface border border-border p-6">
-                <h3 className="text-white font-black uppercase text-sm mb-4">PŘIDAT RT PICK</h3>
+                <h3 className="text-white font-black uppercase text-sm mb-4">ADD RT PICK</h3>
                 {pickError && <p className="text-red-400 text-xs mb-3">{pickError}</p>}
                 {pickSuccess && <p className="text-green-400 text-xs mb-3">{pickSuccess}</p>}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -447,49 +447,49 @@ export function AdminDashboard() {
                     <select
                       value={pickEventId}
                       onChange={e => setPickEventId(e.target.value)}
-                      className="w-full bg-bg-dark border border-border text-white text-sm px-3 py-2 focus:outline-none focus:border-accent"
+                      className="w-full bg-bg-dark border border-border text-white text-sm px-3 py-2 focus:outline-none focus:border-primary"
                     >
-                      <option value="">Vyber event...</option>
+                      <option value="">Select event...</option>
                       {publishedEvents.map(ev => (
                         <option key={ev.id} value={ev.id}>{ev.name}</option>
                       ))}
                     </select>
                   </div>
                   <div>
-                    <label className="text-text-muted text-xs uppercase tracking-widest block mb-1">Platnost do (volitelné)</label>
+                    <label className="text-text-muted text-xs uppercase tracking-widest block mb-1">Expires at (optional)</label>
                     <input
                       type="datetime-local"
                       value={pickExpiresAt}
                       onChange={e => setPickExpiresAt(e.target.value)}
-                      className="w-full bg-bg-dark border border-border text-white text-sm px-3 py-2 focus:outline-none focus:border-accent"
+                      className="w-full bg-bg-dark border border-border text-white text-sm px-3 py-2 focus:outline-none focus:border-primary"
                     />
                   </div>
                 </div>
                 <div className="mt-4">
-                  <label className="text-text-muted text-xs uppercase tracking-widest block mb-1">Reason (proč to vybíráme)</label>
+                  <label className="text-text-muted text-xs uppercase tracking-widest block mb-1">Reason</label>
                   <textarea
                     value={pickReason}
                     onChange={e => setPickReason(e.target.value)}
                     rows={3}
-                    placeholder="Proč je tato akce RT Pick..."
-                    className="w-full bg-bg-dark border border-border text-white text-sm px-3 py-2 focus:outline-none focus:border-accent resize-none"
+                    placeholder="Why this event deserves a RT Pick..."
+                    className="w-full bg-bg-dark border border-border text-white text-sm px-3 py-2 focus:outline-none focus:border-primary resize-none"
                   />
                 </div>
                 <button
                   onClick={handleCreatePick}
-                  className="mt-4 bg-accent text-black font-black uppercase text-xs px-6 py-2 hover:bg-accent/80 transition-colors"
+                  className="mt-4 bg-primary text-black font-black uppercase text-xs px-6 py-2 hover:bg-[#c96a4a] transition-colors"
                 >
-                  ◆ PŘIDAT RT PICK
+                  ◆ ADD RT PICK
                 </button>
               </div>
 
               {/* Current Picks Table */}
               <div>
-                <h3 className="text-white font-black uppercase text-sm mb-4">AKTUÁLNÍ RT PICKS ({picks.length})</h3>
+                <h3 className="text-white font-black uppercase text-sm mb-4">CURRENT RT PICKS ({picks.length})</h3>
                 {picksLoading ? (
-                  <p className="text-text-muted text-sm">Načítám...</p>
+                  <p className="text-text-muted text-sm">Loading...</p>
                 ) : picks.length === 0 ? (
-                  <p className="text-text-muted text-sm">Žádné RT Picks</p>
+                  <p className="text-text-muted text-sm">No RT Picks</p>
                 ) : (
                   <div className="space-y-2">
                     {picks.map(pick => (
@@ -498,8 +498,8 @@ export function AdminDashboard() {
                           <p className="text-white font-bold text-sm truncate">{pick.event.name}</p>
                           <p className="text-text-muted text-xs mt-1 line-clamp-2">{pick.reason}</p>
                           <p className="text-text-muted text-xs mt-1">
-                            Kurátor: {pick.curator?.display_name || pick.curator?.username || '—'} ·{' '}
-                            {new Date(pick.featured_at).toLocaleDateString('cs-CZ')}
+                            Curator: {pick.curator?.display_name || pick.curator?.username || '—'} ·{' '}
+                            {new Date(pick.featured_at).toLocaleDateString('en-GB')}
                           </p>
                         </div>
                         <button

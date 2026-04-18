@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
-import { AnimatedBackground, NewNavbar, NewFooter } from '@/components/design'
+import { NewNavbar, NewFooter } from '@/components/design'
 import { ravetureApi } from '@/services/ravetureApi'
+import { useLang } from '@/context'
 import { DJSetCard } from '@/components/magazine/DJSetCard'
 import { ArticleCard } from '@/components/magazine/ArticleCard'
 import { ArchiveTimeline } from '@/components/magazine/ArchiveTimeline'
 import { useAuth } from '@/context/AuthContext'
-import { ImagePlus, X } from 'lucide-react'
+import { ImagePlus, X, Pencil } from 'lucide-react'
 
 type Tab = 'dj-sets' | 'articles' | 'archive'
 
@@ -20,6 +21,7 @@ interface EditingThread {
 export function Magazine() {
   const { user } = useAuth()
   const canWrite = user?.role === 'admin' || user?.role === 'moderator'
+  const { t } = useLang()
 
   const [activeTab, setActiveTab] = useState<Tab>('articles')
 
@@ -162,78 +164,132 @@ export function Magazine() {
   }
 
   const tabs: { id: Tab; label: string }[] = [
-    { id: 'articles', label: 'ARTICLES' },
-    { id: 'dj-sets', label: 'DJ SETS' },
-    { id: 'archive', label: 'ARCHIVE' },
+    { id: 'articles', label: t.magazine.tabArticles },
+    { id: 'dj-sets', label: t.magazine.tabDjSets },
+    { id: 'archive', label: t.magazine.tabArchive },
   ]
 
   return (
-    <div className="relative min-h-screen bg-bg-dark text-white">
-      <AnimatedBackground />
+    <div className="relative min-h-screen bg-bg-dark text-white overflow-x-hidden">
       <NewNavbar />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 pt-32 pb-16">
-        {/* Header */}
-        <div className="mb-12">
-          <span className="bg-primary text-black text-xs font-black px-2 py-1 uppercase tracking-widest">
-            RAVETURE
-          </span>
-          <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tighter text-white mt-4">
-            RAVE
-            <br />
-            <span className="text-primary">MAGAZINE</span>
-          </h1>
-          <p className="text-text-muted text-sm mt-4 max-w-lg">
-            DJ sets, editorial articles, and the full event archive.
-          </p>
+      <main className="pt-24 pb-20">
+        {/* Issue strip */}
+        <div className="border-b border-white/10">
+          <div className="max-w-[1440px] mx-auto px-6 sm:px-10 h-9 flex items-center gap-5 text-[10px] font-mono tracking-[0.22em] uppercase text-white/50">
+            <span className="text-primary text-xs leading-none">◆</span>
+            <span className="text-white font-medium">{t.magazine.badge}</span>
+            <span className="opacity-40">/</span>
+            <span>Bulletin Nº 007</span>
+            <div className="ml-auto flex items-center gap-2">
+              <span className="w-1 h-1 bg-primary" />
+              <span className="hidden sm:inline">Dispatches from the floor</span>
+            </div>
+          </div>
         </div>
 
+        {/* Header */}
+        <section className="border-b border-white/10">
+          <div className="max-w-[1440px] mx-auto px-6 sm:px-10 pt-14 pb-10 sm:pt-20 sm:pb-14">
+            <div className="text-[10px] font-mono tracking-[0.22em] uppercase text-primary mb-5">
+              § 01 / Editorial
+            </div>
+            <div className="grid grid-cols-12 gap-6 sm:gap-10 items-end">
+              <h1
+                className="col-span-12 font-headline text-[clamp(1.75rem,7vw,5.5rem)] leading-[0.95] tracking-[-0.035em] uppercase whitespace-nowrap"
+                style={{ fontWeight: 700 }}
+              >
+                {t.magazine.title1} <span className="text-primary">{t.magazine.title2}</span>
+              </h1>
+              <p className="col-span-12 md:col-span-7 text-sm md:text-[15px] leading-[1.65] text-white/60 max-w-xl">
+                {t.magazine.subtitle}
+              </p>
+            </div>
+          </div>
+        </section>
+
         {/* Tabs */}
-        <div className="flex border-b border-border mb-10">
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-6 py-3 text-xs font-black uppercase tracking-widest border-b-2 -mb-px transition-colors ${
-                activeTab === tab.id
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-text-muted hover:text-white'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="border-b border-white/10 sticky top-16 z-30 bg-bg-dark/95 backdrop-blur-sm">
+          <div className="max-w-[1440px] mx-auto px-6 sm:px-10">
+            <div className="flex">
+              {tabs.map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`relative px-0 mr-8 sm:mr-10 py-4 text-[10px] sm:text-[11px] font-mono uppercase tracking-[0.22em] transition-colors ${
+                    activeTab === tab.id
+                      ? 'text-white'
+                      : 'text-white/40 hover:text-white/80'
+                  }`}
+                >
+                  {tab.label}
+                  <span
+                    className={`absolute left-0 right-0 -bottom-px h-px transition-all duration-300 ${
+                      activeTab === tab.id ? 'bg-primary' : 'bg-transparent'
+                    }`}
+                  />
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
+
+        <div className="max-w-[1440px] mx-auto px-6 sm:px-10 pt-12 pb-4">
 
         {/* ── DJ SETS ─────────────────────────────────────────────────────── */}
         {activeTab === 'dj-sets' && (
           <div>
-            <div className="flex items-center gap-2 mb-6">
-              <span className="text-text-muted text-xs uppercase tracking-widest">Sort by:</span>
+            <div className="flex flex-wrap items-center gap-2 mb-8 border-b border-white/10 pb-5">
+              <span className="text-[10px] font-mono tracking-[0.22em] uppercase text-white/40 mr-2">
+                Sort
+              </span>
               {(['recent', 'popular', 'likes'] as const).map(s => (
-                <button key={s} onClick={() => setDjSortBy(s)}
-                  className={`text-xs font-bold uppercase px-3 py-1 border transition-colors ${djSortBy === s ? 'border-primary text-primary bg-primary/10' : 'border-border text-text-muted hover:text-white'}`}>
-                  {s === 'recent' ? 'Latest' : s === 'popular' ? 'Most Played' : 'Most Liked'}
+                <button
+                  key={s}
+                  onClick={() => setDjSortBy(s)}
+                  className={`px-3 py-1.5 text-[10px] font-mono uppercase tracking-[0.22em] transition-colors ${
+                    djSortBy === s
+                      ? 'bg-white text-black'
+                      : 'border border-white/15 text-white/60 hover:border-white/40 hover:text-white'
+                  }`}
+                >
+                  {s === 'recent' ? t.magazine.sortLatest : s === 'popular' ? t.magazine.sortPlayed : t.magazine.sortLiked}
                 </button>
               ))}
-              <span className="ml-auto text-text-muted text-xs">{djSetsTotal} sets</span>
+              <span className="ml-auto text-[10px] font-mono tracking-[0.22em] uppercase text-white/40 tabular-nums">
+                <span className="text-white">{String(djSetsTotal).padStart(3, '0')}</span> {t.magazine.sets}
+              </span>
             </div>
             {djSetsLoading && djSetsPage === 1 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {[1,2,3,4,5,6,7,8].map(i => <div key={i} className="bg-surface border border-border animate-pulse h-64" />)}
+                {[1,2,3,4,5,6,7,8].map(i => <div key={i} className="bg-white/5 border border-white/10 animate-pulse h-64" />)}
               </div>
             ) : djSets.length === 0 ? (
-              <div className="text-center py-24"><span className="text-primary text-5xl block mb-4">◆</span><p className="text-text-muted uppercase tracking-widest text-sm">No DJ sets yet</p></div>
+              <div className="py-16 text-center">
+                <div
+                  className="font-headline text-4xl sm:text-5xl uppercase text-white/20"
+                  style={{ fontWeight: 700 }}
+                >
+                  Nothing filed yet.
+                </div>
+                <p className="text-[11px] text-white/50 mt-4 font-mono tracking-[0.22em] uppercase">
+                  {t.magazine.noSets}
+                </p>
+              </div>
             ) : (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {djSets.map(set => <DJSetCard key={set.id} set={set} />)}
                 </div>
                 {djSetsTotal > djSets.length && (
-                  <div className="text-center mt-8">
-                    <button onClick={() => setDjSetsPage(p => p + 1)} disabled={djSetsLoading}
-                      className="border border-border text-text-muted font-black uppercase text-xs px-8 py-3 hover:border-primary hover:text-primary transition-colors disabled:opacity-50">
-                      {djSetsLoading ? 'LOADING...' : 'LOAD MORE'}
+                  <div className="text-center mt-10 pt-6 border-t border-white/10">
+                    <button
+                      onClick={() => setDjSetsPage(p => p + 1)}
+                      disabled={djSetsLoading}
+                      className="inline-flex items-center gap-3 px-5 py-3 border border-white/25 text-[11px] font-mono tracking-[0.2em] uppercase text-white/80 hover:border-white hover:text-white transition-colors disabled:opacity-40"
+                    >
+                      <span>{djSetsLoading ? t.magazine.loading : t.magazine.loadMore}</span>
+                      <span>+</span>
                     </button>
                   </div>
                 )}
@@ -247,10 +303,13 @@ export function Magazine() {
           <div>
             {/* Write button */}
             {canWrite && !editingThread && !showCreateForm && (
-              <div className="mb-8">
-                <button onClick={() => setShowCreateForm(true)}
-                  className="border border-primary text-primary font-black uppercase text-xs px-6 py-2 hover:bg-primary hover:text-black transition-colors">
-                  + WRITE ARTICLE
+              <div className="mb-8 flex justify-end">
+                <button
+                  onClick={() => setShowCreateForm(true)}
+                  className="inline-flex items-center gap-2.5 px-4 py-2.5 border border-white/25 text-[10px] font-mono tracking-[0.22em] uppercase text-white/80 hover:border-white hover:text-white transition-colors"
+                >
+                  <Pencil className="w-3 h-3" strokeWidth={1.75} />
+                  <span>{t.magazine.writeArticle}</span>
                 </button>
               </div>
             )}
@@ -288,21 +347,35 @@ export function Magazine() {
             {/* List */}
             {articlesLoading ? (
               <div className="space-y-4">
-                <div className="bg-surface border border-border animate-pulse h-96 w-full" />
-                {[1,2,3].map(i => <div key={i} className="bg-surface border border-border animate-pulse h-32" />)}
+                <div className="bg-white/5 border border-white/10 animate-pulse h-96 w-full" />
+                {[1,2,3].map(i => <div key={i} className="bg-white/5 border border-white/10 animate-pulse h-32" />)}
               </div>
             ) : articlesError ? (
-              <div className="text-center py-24">
-                <span className="text-primary text-5xl block mb-4">◆</span>
-                <p className="text-text-muted uppercase tracking-widest text-sm">Editorial category not found</p>
-                <p className="text-text-muted text-xs mt-2">
-                  Publish the first article to create the <code className="text-primary">editorial</code> category automatically.
+              <div className="py-16 text-center">
+                <div
+                  className="font-headline text-4xl sm:text-5xl uppercase text-white/20"
+                  style={{ fontWeight: 700 }}
+                >
+                  Signal lost.
+                </div>
+                <p className="text-[11px] text-white/50 mt-4 font-mono tracking-[0.22em] uppercase">
+                  {t.magazine.editorialMissing}
+                </p>
+                <p className="text-white/40 text-[13px] mt-3 max-w-md mx-auto leading-[1.6]">
+                  {t.magazine.editorialHint}
                 </p>
               </div>
             ) : articles.length === 0 ? (
-              <div className="text-center py-24">
-                <span className="text-primary text-5xl block mb-4">◆</span>
-                <p className="text-text-muted uppercase tracking-widest text-sm">No articles yet</p>
+              <div className="py-16 text-center">
+                <div
+                  className="font-headline text-4xl sm:text-5xl uppercase text-white/20"
+                  style={{ fontWeight: 700 }}
+                >
+                  Blank page.
+                </div>
+                <p className="text-[11px] text-white/50 mt-4 font-mono tracking-[0.22em] uppercase">
+                  {t.magazine.noArticles}
+                </p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -324,7 +397,8 @@ export function Magazine() {
 
         {/* ── ARCHIVE ─────────────────────────────────────────────────────── */}
         {activeTab === 'archive' && <ArchiveTimeline />}
-      </div>
+        </div>
+      </main>
 
       <NewFooter />
     </div>
@@ -363,24 +437,24 @@ function ArticleForm({ title, subtitle, content, imageUrl, submitting, error, on
   }
 
   return (
-    <form onSubmit={onSubmit} className="border border-border bg-surface p-6 space-y-5">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-black uppercase tracking-widest text-primary">{heading}</span>
-        <button type="button" onClick={onCancel} className="text-text-muted hover:text-white text-xs uppercase tracking-widest transition-colors">Cancel</button>
+    <form onSubmit={onSubmit} className="border-t border-b border-white/10 py-10 space-y-6">
+      <div className="flex items-center justify-between pb-4 border-b border-white/10">
+        <span className="text-[10px] font-mono tracking-[0.22em] uppercase text-primary">§ {heading}</span>
+        <button type="button" onClick={onCancel} className="text-[10px] font-mono tracking-[0.22em] uppercase text-white/50 hover:text-white transition-colors">Cancel</button>
       </div>
 
       {/* Cover image */}
       <div>
-        <label className="block text-xs uppercase tracking-widest text-text-muted mb-2">Cover Image</label>
+        <label className="block text-[10px] font-mono tracking-[0.22em] uppercase text-white/50 mb-2.5">Cover image</label>
         {imageUrl ? (
           <div className="relative group">
-            <img src={imageUrl} alt="cover" className="w-full h-48 object-cover" />
+            <img src={imageUrl} alt="cover" className="w-full h-56 object-cover grayscale group-hover:grayscale-0 transition-[filter] duration-500" />
             <button
               type="button"
               onClick={() => { onImageUrlChange(''); if (fileRef.current) fileRef.current.value = '' }}
-              className="absolute top-2 right-2 bg-black/70 border border-border text-text-muted hover:text-white p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+              className="absolute top-3 right-3 bg-black/70 border border-white/20 text-white/70 hover:text-white hover:border-white p-1.5 transition-colors"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
         ) : (
@@ -388,54 +462,57 @@ function ArticleForm({ title, subtitle, content, imageUrl, submitting, error, on
             type="button"
             onClick={() => fileRef.current?.click()}
             disabled={uploading}
-            className="w-full h-40 border border-dashed border-border hover:border-primary text-text-muted hover:text-primary transition-colors flex flex-col items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full h-40 border border-dashed border-white/20 hover:border-white/60 text-white/40 hover:text-white transition-colors flex flex-col items-center justify-center gap-3 disabled:opacity-50"
           >
-            <ImagePlus className="w-8 h-8" />
-            <span className="text-xs uppercase tracking-widest">{uploading ? 'Uploading...' : 'Click to upload image'}</span>
+            <ImagePlus className="w-6 h-6" strokeWidth={1.25} />
+            <span className="text-[10px] font-mono tracking-[0.22em] uppercase">{uploading ? 'Uploading…' : 'Upload cover image'}</span>
           </button>
         )}
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-        {uploadError && <p className="text-red-400 text-xs mt-1">{uploadError}</p>}
+        {uploadError && <p className="text-[11px] text-destructive mt-2 font-mono tracking-wider">{uploadError}</p>}
       </div>
 
       {/* Title */}
       <div>
-        <label className="block text-xs uppercase tracking-widest text-text-muted mb-1">
-          Headline <span className="normal-case tracking-normal opacity-60">(min. 5 chars)</span>
+        <label className="block text-[10px] font-mono tracking-[0.22em] uppercase text-white/50 mb-2">
+          Headline <span className="normal-case tracking-normal text-white/30">(min. 5 chars)</span>
         </label>
         <input type="text" value={title} onChange={e => onTitleChange(e.target.value)}
-          placeholder="Article headline..." minLength={5} maxLength={200} required
-          className="w-full bg-bg-dark border border-border text-white text-sm px-4 py-2 focus:outline-none focus:border-primary placeholder:text-text-muted" />
+          placeholder="Article headline…" minLength={5} maxLength={200} required
+          className="w-full bg-transparent border border-white/15 text-white text-base px-4 py-3 focus:outline-none focus:border-white/60 placeholder:text-white/30 transition-colors" />
       </div>
 
       {/* Subtitle */}
       <div>
-        <label className="block text-xs uppercase tracking-widest text-text-muted mb-1">Subtitle <span className="normal-case tracking-normal opacity-60">(optional)</span></label>
+        <label className="block text-[10px] font-mono tracking-[0.22em] uppercase text-white/50 mb-2">
+          Subtitle <span className="normal-case tracking-normal text-white/30">(optional)</span>
+        </label>
         <input type="text" value={subtitle} onChange={e => onSubtitleChange(e.target.value)}
-          placeholder="Short description shown under the headline..." maxLength={300}
-          className="w-full bg-bg-dark border border-border text-white text-sm px-4 py-2 focus:outline-none focus:border-primary placeholder:text-text-muted" />
+          placeholder="Short description shown under the headline…" maxLength={300}
+          className="w-full bg-transparent border border-white/15 text-white text-sm px-4 py-3 focus:outline-none focus:border-white/60 placeholder:text-white/30 transition-colors" />
       </div>
 
       {/* Content */}
       <div>
-        <label className="block text-xs uppercase tracking-widest text-text-muted mb-1">
-          Body <span className="normal-case tracking-normal opacity-60">(min. 10 chars)</span>
+        <label className="block text-[10px] font-mono tracking-[0.22em] uppercase text-white/50 mb-2">
+          Body <span className="normal-case tracking-normal text-white/30">(min. 10 chars)</span>
         </label>
         <textarea value={content} onChange={e => onContentChange(e.target.value)}
-          placeholder="Write your article..." rows={10} minLength={10} required
-          className="w-full bg-bg-dark border border-border text-white text-sm px-4 py-3 focus:outline-none focus:border-primary placeholder:text-text-muted resize-y" />
+          placeholder="Write your article…" rows={12} minLength={10} required
+          className="w-full bg-transparent border border-white/15 text-white text-sm leading-[1.7] px-4 py-3 focus:outline-none focus:border-white/60 placeholder:text-white/30 resize-y transition-colors" />
       </div>
 
-      {error && <p className="text-red-400 text-xs">{error}</p>}
+      {error && <p className="text-[12px] text-destructive font-mono tracking-wider">{error}</p>}
 
-      <div className="flex gap-3 pt-1">
+      <div className="flex items-center gap-5 pt-2 border-t border-white/10">
         <button type="submit" disabled={submitting || title.trim().length < 5 || content.trim().length < 10}
-          className="border border-primary text-primary font-black uppercase text-xs px-8 py-2 hover:bg-primary hover:text-black transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-          {submitting ? submittingLabel : submitLabel}
+          className="group inline-flex items-center gap-3 px-5 py-3 bg-primary text-black text-[11px] font-mono tracking-[0.2em] uppercase font-semibold hover:bg-white transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed mt-5">
+          <span>{submitting ? submittingLabel : submitLabel}</span>
+          {!submitting && <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>}
         </button>
         <button type="button" onClick={onCancel}
-          className="border border-border text-text-muted font-black uppercase text-xs px-6 py-2 hover:text-white hover:border-white transition-colors">
-          CANCEL
+          className="text-[11px] font-mono tracking-[0.22em] uppercase text-white/60 hover:text-white transition-colors mt-5">
+          Cancel
         </button>
       </div>
     </form>
