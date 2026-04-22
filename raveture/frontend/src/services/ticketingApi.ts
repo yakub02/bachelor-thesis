@@ -255,6 +255,18 @@ class TicketingApiService {
     })
   }
 
+  async scanTicketByCode(data: {
+    code: string
+    event_id?: string
+    scanned_by?: string
+    location?: string
+  }) {
+    return this.request<import('@/types').ValidationResult>('/api/v1/validate/scan-by-code', {
+      method: 'POST',
+      body: data,
+    })
+  }
+
   async getValidationStats(eventId: string) {
     return this.request<import('@/types').ValidationStats>(`/api/v1/validate/stats/${eventId}`)
   }

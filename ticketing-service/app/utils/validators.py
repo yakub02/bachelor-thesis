@@ -91,12 +91,27 @@ class TicketTypeCreate(BaseModel):
 class TicketScan(BaseModel):
     """Ticket validation/scan request."""
     model_config = ConfigDict(str_strip_whitespace=True)
-    
+
     ticket_id: UUID
     event_id: UUID
     signature: str = Field(min_length=64, max_length=64)  # SHA-256 hex
     scanned_by: Optional[UUID] = None
     location: Optional[str] = Field(default=None, max_length=100)
+
+
+class TicketScanByCode(BaseModel):
+    """Manual ticket validation by short code (fallback when QR is unreadable)."""
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    code: str = Field(min_length=12, max_length=12)  # last 12 chars of ticket UUID
+    event_id: Optional[UUID] = None  # optional: when omitted, ticket's own event is used
+    scanned_by: Optional[UUID] = None
+    location: Optional[str] = Field(default=None, max_length=100)
+
+    @field_validator('code')
+    @classmethod
+    def normalize_code(cls, v):
+        return v.lower().replace(' ', '').replace('-', '')
 
 
 # =============================================================================
