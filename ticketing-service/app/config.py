@@ -45,7 +45,7 @@ class Config:
     # Rate limiting
     RATELIMIT_ENABLED = True
     RATELIMIT_DEFAULT = "100 per minute"
-    RATELIMIT_STORAGE_URL = "memory://"
+    RATELIMIT_STORAGE_URI = "memory://"
     
     # Order settings
     ORDER_EXPIRATION_MINUTES = 15

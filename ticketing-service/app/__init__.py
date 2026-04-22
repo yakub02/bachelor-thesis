@@ -54,11 +54,7 @@ def get_rate_limit_key():
     return f"ip:{get_remote_address()}"
 
 
-limiter = Limiter(
-    key_func=get_rate_limit_key,
-    default_limits=["100 per minute"],  # Default for all routes
-    storage_uri="memory://",  # Use Redis in production
-)
+limiter = Limiter(key_func=get_rate_limit_key)
 
 
 # =============================================================================
