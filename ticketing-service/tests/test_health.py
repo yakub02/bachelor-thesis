@@ -10,7 +10,8 @@ def test_health_endpoint(client):
 
     data = response.get_json()
     assert data['status'] == 'healthy'
-    assert 'timestamp' in data
+    assert data['service'] == 'ticketing'
+    assert 'version' in data
 
 
 def test_health_returns_json(client):
