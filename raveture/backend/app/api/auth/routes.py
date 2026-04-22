@@ -60,7 +60,8 @@ def register():
     try:
         data = UserRegister(**request.get_json())
     except ValidationError as e:
-        return jsonify({'error': 'Validation error', 'details': e.errors()}), 400
+        errors = [{'loc': err['loc'], 'msg': err['msg'], 'type': err['type']} for err in e.errors()]
+        return jsonify({'error': 'Validation error', 'details': errors}), 400
 
     # Check if email exists
     if User.query.filter_by(email=data.email).first():
@@ -130,7 +131,8 @@ def login():
     try:
         data = UserLogin(**request.get_json())
     except ValidationError as e:
-        return jsonify({'error': 'Validation error', 'details': e.errors()}), 400
+        errors = [{'loc': err['loc'], 'msg': err['msg'], 'type': err['type']} for err in e.errors()]
+        return jsonify({'error': 'Validation error', 'details': errors}), 400
 
     user = User.query.filter_by(email=data.email).first()
 
@@ -247,7 +249,8 @@ def forgot_password():
     try:
         data = ForgotPassword(**request.get_json())
     except ValidationError as e:
-        return jsonify({'error': 'Validation error', 'details': e.errors()}), 400
+        errors = [{'loc': err['loc'], 'msg': err['msg'], 'type': err['type']} for err in e.errors()]
+        return jsonify({'error': 'Validation error', 'details': errors}), 400
 
     # Find user by email
     user = User.query.filter_by(email=data.email).first()
@@ -313,7 +316,8 @@ def reset_password():
     try:
         data = ResetPassword(**request.get_json())
     except ValidationError as e:
-        return jsonify({'error': 'Validation error', 'details': e.errors()}), 400
+        errors = [{'loc': err['loc'], 'msg': err['msg'], 'type': err['type']} for err in e.errors()]
+        return jsonify({'error': 'Validation error', 'details': errors}), 400
 
     # Find user by reset token
     user = User.query.filter_by(reset_token=data.token).first()
