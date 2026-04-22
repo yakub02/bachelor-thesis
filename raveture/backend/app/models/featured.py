@@ -6,8 +6,7 @@ Tracks curator information and reasoning for featured events.
 import uuid7
 from datetime import datetime
 
-from sqlalchemy.dialects.postgresql import UUID
-
+from app.utils.types import CompatUUID
 from app import db
 
 
@@ -20,11 +19,11 @@ class FeaturedEvent(db.Model):
     """
     __tablename__ = 'featured_events'
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
+    id = db.Column(CompatUUID(), primary_key=True, default=uuid7.uuid7)
 
     # Event being featured
     event_id = db.Column(
-        UUID(as_uuid=True),
+        CompatUUID(),
         db.ForeignKey('events.id', ondelete='CASCADE'),
         nullable=False,
         unique=True  # Event can only be featured once at a time
@@ -32,7 +31,7 @@ class FeaturedEvent(db.Model):
 
     # Curator who picked this event (must be admin/moderator)
     curator_id = db.Column(
-        UUID(as_uuid=True),
+        CompatUUID(),
         db.ForeignKey('users.id', ondelete='SET NULL'),
         nullable=True  # Nullable in case curator is deleted
     )

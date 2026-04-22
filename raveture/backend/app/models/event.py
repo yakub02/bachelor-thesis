@@ -8,7 +8,7 @@ from datetime import datetime
 from enum import Enum as PyEnum
 
 from sqlalchemy import Index, CheckConstraint
-from sqlalchemy.dialects.postgresql import UUID, ARRAY
+from app.utils.types import ArrayType, CompatUUID
 
 from app import db
 
@@ -49,9 +49,9 @@ class Event(db.Model):
         Index('idx_events_slug', 'slug', unique=True),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
-    organizer_id = db.Column(UUID(as_uuid=True), db.ForeignKey('organizers.id'), nullable=False)
-    venue_id = db.Column(UUID(as_uuid=True), db.ForeignKey('venues.id'))
+    id = db.Column(CompatUUID(), primary_key=True, default=uuid7.uuid7)
+    organizer_id = db.Column(CompatUUID(), db.ForeignKey('organizers.id'), nullable=False)
+    venue_id = db.Column(CompatUUID(), db.ForeignKey('venues.id'))
 
     # Basic info
     name = db.Column(db.String(200), nullable=False)
@@ -69,7 +69,7 @@ class Event(db.Model):
     flyer_url = db.Column(db.String(500))
 
     # Categorization
-    genres = db.Column(ARRAY(db.String(50)))
+    genres = db.Column(ArrayType(db.String(50)))
     event_type = db.Column(db.String(20), default='club_night')
 
     # Status
@@ -140,8 +140,8 @@ class Organizer(db.Model):
         Index('idx_organizers_user', 'user_id'),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
-    user_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False)
+    id = db.Column(CompatUUID(), primary_key=True, default=uuid7.uuid7)
+    user_id = db.Column(CompatUUID(), db.ForeignKey('users.id'), nullable=False)
 
     name = db.Column(db.String(100), nullable=False)
     slug = db.Column(db.String(100), unique=True, nullable=False)
@@ -189,8 +189,8 @@ class Venue(db.Model):
         Index('idx_venues_slug', 'slug', unique=True),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
-    created_by_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'))
+    id = db.Column(CompatUUID(), primary_key=True, default=uuid7.uuid7)
+    created_by_id = db.Column(CompatUUID(), db.ForeignKey('users.id'))
 
     name = db.Column(db.String(200), nullable=False)
     slug = db.Column(db.String(200), unique=True)
@@ -247,14 +247,14 @@ class Artist(db.Model):
         Index('idx_artists_name', 'name'),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
-    user_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'))  # Optional link
+    id = db.Column(CompatUUID(), primary_key=True, default=uuid7.uuid7)
+    user_id = db.Column(CompatUUID(), db.ForeignKey('users.id'))  # Optional link
 
     name = db.Column(db.String(100), nullable=False)
     slug = db.Column(db.String(100), unique=True)
     bio = db.Column(db.Text)
 
-    genres = db.Column(ARRAY(db.String(50)))
+    genres = db.Column(ArrayType(db.String(50)))
 
     # Visuals
     photo_url = db.Column(db.String(500))
@@ -304,8 +304,8 @@ class EventArtist(db.Model):
     """
     __tablename__ = 'event_artists'
 
-    event_id = db.Column(UUID(as_uuid=True), db.ForeignKey('events.id', ondelete='CASCADE'), primary_key=True)
-    artist_id = db.Column(UUID(as_uuid=True), db.ForeignKey('artists.id', ondelete='CASCADE'), primary_key=True)
+    event_id = db.Column(CompatUUID(), db.ForeignKey('events.id', ondelete='CASCADE'), primary_key=True)
+    artist_id = db.Column(CompatUUID(), db.ForeignKey('artists.id', ondelete='CASCADE'), primary_key=True)
 
     set_time = db.Column(db.Time)  # When they play
     set_end_time = db.Column(db.Time)
@@ -337,8 +337,8 @@ class EventInterest(db.Model):
     """
     __tablename__ = 'event_interests'
 
-    event_id = db.Column(UUID(as_uuid=True), db.ForeignKey('events.id', ondelete='CASCADE'), primary_key=True)
-    user_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id', ondelete='CASCADE'), primary_key=True)
+    event_id = db.Column(CompatUUID(), db.ForeignKey('events.id', ondelete='CASCADE'), primary_key=True)
+    user_id = db.Column(CompatUUID(), db.ForeignKey('users.id', ondelete='CASCADE'), primary_key=True)
 
     status = db.Column(db.String(20), default='interested')  # interested, going
     created_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow, nullable=False)

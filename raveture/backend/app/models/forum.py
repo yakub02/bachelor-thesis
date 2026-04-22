@@ -8,8 +8,7 @@ from datetime import datetime
 from enum import Enum as PyEnum
 
 from sqlalchemy import Index, CheckConstraint
-from sqlalchemy.dialects.postgresql import UUID
-
+from app.utils.types import CompatUUID
 from app import db
 
 
@@ -43,7 +42,7 @@ class ForumCategory(db.Model):
         Index('idx_forum_categories_order', 'order'),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
+    id = db.Column(CompatUUID(), primary_key=True, default=uuid7.uuid7)
 
     name = db.Column(db.String(100), nullable=False)
     slug = db.Column(db.String(100), unique=True, nullable=False)
@@ -94,9 +93,9 @@ class ForumThread(db.Model):
         Index('idx_forum_threads_pinned', 'is_pinned', 'last_post_at'),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
-    category_id = db.Column(UUID(as_uuid=True), db.ForeignKey('forum_categories.id'), nullable=False)
-    author_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False)
+    id = db.Column(CompatUUID(), primary_key=True, default=uuid7.uuid7)
+    category_id = db.Column(CompatUUID(), db.ForeignKey('forum_categories.id'), nullable=False)
+    author_id = db.Column(CompatUUID(), db.ForeignKey('users.id'), nullable=False)
 
     title = db.Column(db.String(200), nullable=False)
     slug = db.Column(db.String(200), nullable=False)
@@ -119,7 +118,7 @@ class ForumThread(db.Model):
 
     # Last activity tracking
     last_post_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
-    last_post_by = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'))
+    last_post_by = db.Column(CompatUUID(), db.ForeignKey('users.id'))
 
     created_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -171,14 +170,14 @@ class ForumPost(db.Model):
         Index('idx_forum_posts_author', 'author_id'),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
-    thread_id = db.Column(UUID(as_uuid=True), db.ForeignKey('forum_threads.id', ondelete='CASCADE'), nullable=False)
-    author_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False)
+    id = db.Column(CompatUUID(), primary_key=True, default=uuid7.uuid7)
+    thread_id = db.Column(CompatUUID(), db.ForeignKey('forum_threads.id', ondelete='CASCADE'), nullable=False)
+    author_id = db.Column(CompatUUID(), db.ForeignKey('users.id'), nullable=False)
 
     content = db.Column(db.Text, nullable=False)  # Markdown supported
 
     # Reply to another post
-    reply_to_id = db.Column(UUID(as_uuid=True), db.ForeignKey('forum_posts.id'))
+    reply_to_id = db.Column(CompatUUID(), db.ForeignKey('forum_posts.id'))
 
     # Edit tracking
     is_edited = db.Column(db.Boolean, default=False, nullable=False)
@@ -187,7 +186,7 @@ class ForumPost(db.Model):
 
     # Moderation
     is_hidden = db.Column(db.Boolean, default=False, nullable=False)
-    hidden_by = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'))
+    hidden_by = db.Column(CompatUUID(), db.ForeignKey('users.id'))
     hidden_reason = db.Column(db.String(200))
 
     # Statistics (denormalized)
@@ -235,8 +234,8 @@ class ForumReaction(db.Model):
         ),
     )
 
-    post_id = db.Column(UUID(as_uuid=True), db.ForeignKey('forum_posts.id', ondelete='CASCADE'), primary_key=True)
-    user_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id', ondelete='CASCADE'), primary_key=True)
+    post_id = db.Column(CompatUUID(), db.ForeignKey('forum_posts.id', ondelete='CASCADE'), primary_key=True)
+    user_id = db.Column(CompatUUID(), db.ForeignKey('users.id', ondelete='CASCADE'), primary_key=True)
 
     type = db.Column(db.String(20), nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow, nullable=False)
@@ -265,15 +264,15 @@ class ForumReport(db.Model):
         Index('idx_forum_reports_status', 'status'),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
-    post_id = db.Column(UUID(as_uuid=True), db.ForeignKey('forum_posts.id'), nullable=False)
-    reporter_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False)
+    id = db.Column(CompatUUID(), primary_key=True, default=uuid7.uuid7)
+    post_id = db.Column(CompatUUID(), db.ForeignKey('forum_posts.id'), nullable=False)
+    reporter_id = db.Column(CompatUUID(), db.ForeignKey('users.id'), nullable=False)
 
     reason = db.Column(db.String(20), nullable=False)
     details = db.Column(db.Text)
 
     status = db.Column(db.String(20), default='pending', nullable=False)
-    reviewed_by = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'))
+    reviewed_by = db.Column(CompatUUID(), db.ForeignKey('users.id'))
     reviewed_at = db.Column(db.DateTime(timezone=True))
     review_note = db.Column(db.Text)
 

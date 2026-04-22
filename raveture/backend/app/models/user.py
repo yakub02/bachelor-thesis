@@ -8,7 +8,7 @@ from datetime import datetime
 from enum import Enum as PyEnum
 
 from sqlalchemy import Index, CheckConstraint
-from sqlalchemy.dialects.postgresql import UUID, ARRAY
+from app.utils.types import ArrayType, CompatUUID
 
 from app import db
 
@@ -46,7 +46,7 @@ class User(db.Model):
         Index('idx_users_username', 'username', unique=True),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
+    id = db.Column(CompatUUID(), primary_key=True, default=uuid7.uuid7)
 
     # Authentication
     email = db.Column(db.String(255), unique=True, nullable=False)
@@ -153,12 +153,12 @@ class UserFollow(db.Model):
     )
 
     follower_id = db.Column(
-        UUID(as_uuid=True),
+        CompatUUID(),
         db.ForeignKey('users.id', ondelete='CASCADE'),
         primary_key=True
     )
     following_id = db.Column(
-        UUID(as_uuid=True),
+        CompatUUID(),
         db.ForeignKey('users.id', ondelete='CASCADE'),
         primary_key=True
     )
@@ -184,7 +184,7 @@ class UserPreferences(db.Model):
     )
 
     user_id = db.Column(
-        UUID(as_uuid=True),
+        CompatUUID(),
         db.ForeignKey('users.id', ondelete='CASCADE'),
         primary_key=True
     )
@@ -201,8 +201,8 @@ class UserPreferences(db.Model):
     show_listening_activity = db.Column(db.Boolean, default=True, nullable=False)
 
     # Preferences
-    preferred_genres = db.Column(ARRAY(db.String(50)))
-    preferred_cities = db.Column(ARRAY(db.String(100)))
+    preferred_genres = db.Column(ArrayType(db.String(50)))
+    preferred_cities = db.Column(ArrayType(db.String(100)))
 
     # Theme
     dark_mode = db.Column(db.Boolean, default=True, nullable=False)

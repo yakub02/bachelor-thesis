@@ -8,8 +8,7 @@ from datetime import datetime
 from enum import Enum as PyEnum
 
 from sqlalchemy import Index, CheckConstraint
-from sqlalchemy.dialects.postgresql import UUID
-
+from app.utils.types import CompatUUID
 from app import db
 
 
@@ -44,8 +43,8 @@ class ArchivedEvent(db.Model):
         Index('idx_archived_events_date', 'date'),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
-    original_event_id = db.Column(UUID(as_uuid=True), db.ForeignKey('events.id'))  # If migrated from Event
+    id = db.Column(CompatUUID(), primary_key=True, default=uuid7.uuid7)
+    original_event_id = db.Column(CompatUUID(), db.ForeignKey('events.id'))  # If migrated from Event
 
     # Basic info
     name = db.Column(db.String(200), nullable=False)
@@ -80,12 +79,12 @@ class ArchivedEvent(db.Model):
 
     # Verification
     is_verified = db.Column(db.Boolean, default=False, nullable=False)
-    verified_by = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'))
+    verified_by = db.Column(CompatUUID(), db.ForeignKey('users.id'))
     verified_at = db.Column(db.DateTime(timezone=True))
 
     created_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'))
+    created_by = db.Column(CompatUUID(), db.ForeignKey('users.id'))
 
     # Relationships
     original_event = db.relationship('Event')
@@ -138,13 +137,13 @@ class SetRecording(db.Model):
         Index('idx_set_recordings_event', 'archived_event_id'),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
-    archived_event_id = db.Column(UUID(as_uuid=True), db.ForeignKey('archived_events.id'), nullable=False)
-    uploader_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False)
+    id = db.Column(CompatUUID(), primary_key=True, default=uuid7.uuid7)
+    archived_event_id = db.Column(CompatUUID(), db.ForeignKey('archived_events.id'), nullable=False)
+    uploader_id = db.Column(CompatUUID(), db.ForeignKey('users.id'), nullable=False)
 
     # Artist (text - may not have profile)
     artist_name = db.Column(db.String(100), nullable=False)
-    artist_id = db.Column(UUID(as_uuid=True), db.ForeignKey('artists.id'))  # Optional link
+    artist_id = db.Column(CompatUUID(), db.ForeignKey('artists.id'))  # Optional link
 
     # Audio
     audio_url = db.Column(db.String(500), nullable=False)
@@ -210,9 +209,9 @@ class ArchiveContribution(db.Model):
         Index('idx_contributions_user', 'user_id'),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
-    user_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False)
-    archived_event_id = db.Column(UUID(as_uuid=True), db.ForeignKey('archived_events.id'))
+    id = db.Column(CompatUUID(), primary_key=True, default=uuid7.uuid7)
+    user_id = db.Column(CompatUUID(), db.ForeignKey('users.id'), nullable=False)
+    archived_event_id = db.Column(CompatUUID(), db.ForeignKey('archived_events.id'))
 
     type = db.Column(db.String(20), nullable=False)
 
@@ -222,7 +221,7 @@ class ArchiveContribution(db.Model):
 
     # Moderation
     status = db.Column(db.String(20), default='pending', nullable=False)
-    reviewed_by = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'))
+    reviewed_by = db.Column(CompatUUID(), db.ForeignKey('users.id'))
     reviewed_at = db.Column(db.DateTime(timezone=True))
     review_note = db.Column(db.Text)
 
@@ -260,9 +259,9 @@ class ArchiveFlyer(db.Model):
         Index('idx_archive_flyers_year', 'year'),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
-    archived_event_id = db.Column(UUID(as_uuid=True), db.ForeignKey('archived_events.id'))
-    uploader_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False)
+    id = db.Column(CompatUUID(), primary_key=True, default=uuid7.uuid7)
+    archived_event_id = db.Column(CompatUUID(), db.ForeignKey('archived_events.id'))
+    uploader_id = db.Column(CompatUUID(), db.ForeignKey('users.id'), nullable=False)
 
     image_url = db.Column(db.String(500), nullable=False)
     thumbnail_url = db.Column(db.String(500))

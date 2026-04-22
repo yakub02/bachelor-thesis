@@ -8,7 +8,8 @@ from datetime import datetime
 from enum import Enum as PyEnum
 
 from sqlalchemy import Index, CheckConstraint
-from sqlalchemy.dialects.postgresql import UUID, ARRAY, JSON
+from sqlalchemy.dialects.postgresql import JSON
+from app.utils.types import ArrayType, CompatUUID
 
 from app import db
 
@@ -40,12 +41,12 @@ class MediaFile(db.Model):
         Index('idx_media_created', 'created_at'),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
-    uploader_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False)
+    id = db.Column(CompatUUID(), primary_key=True, default=uuid7.uuid7)
+    uploader_id = db.Column(CompatUUID(), db.ForeignKey('users.id'), nullable=False)
 
     # Optional associations
-    event_id = db.Column(UUID(as_uuid=True), db.ForeignKey('events.id'))
-    artist_id = db.Column(UUID(as_uuid=True), db.ForeignKey('artists.id'))
+    event_id = db.Column(CompatUUID(), db.ForeignKey('events.id'))
+    artist_id = db.Column(CompatUUID(), db.ForeignKey('artists.id'))
 
     # Type and format
     type = db.Column(db.String(20), nullable=False)
@@ -70,8 +71,8 @@ class MediaFile(db.Model):
     thumbnail_url = db.Column(db.String(500))
 
     # Categorization
-    genres = db.Column(ARRAY(db.String(50)))
-    tags = db.Column(ARRAY(db.String(50)))
+    genres = db.Column(ArrayType(db.String(50)))
+    tags = db.Column(ArrayType(db.String(50)))
 
     # Statistics
     play_count = db.Column(db.Integer, default=0, nullable=False)
@@ -150,8 +151,8 @@ class Playlist(db.Model):
         Index('idx_playlists_public', 'is_public'),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
-    creator_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False)
+    id = db.Column(CompatUUID(), primary_key=True, default=uuid7.uuid7)
+    creator_id = db.Column(CompatUUID(), db.ForeignKey('users.id'), nullable=False)
 
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
@@ -203,8 +204,8 @@ class PlaylistItem(db.Model):
     """
     __tablename__ = 'playlist_items'
 
-    playlist_id = db.Column(UUID(as_uuid=True), db.ForeignKey('playlists.id', ondelete='CASCADE'), primary_key=True)
-    media_id = db.Column(UUID(as_uuid=True), db.ForeignKey('media_files.id', ondelete='CASCADE'), primary_key=True)
+    playlist_id = db.Column(CompatUUID(), db.ForeignKey('playlists.id', ondelete='CASCADE'), primary_key=True)
+    media_id = db.Column(CompatUUID(), db.ForeignKey('media_files.id', ondelete='CASCADE'), primary_key=True)
 
     order = db.Column(db.Integer, nullable=False, default=0)
     added_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow, nullable=False)
@@ -234,9 +235,9 @@ class Album(db.Model):
         Index('idx_albums_creator', 'creator_id'),
     )
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid7.uuid7)
-    event_id = db.Column(UUID(as_uuid=True), db.ForeignKey('events.id'))
-    creator_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False)
+    id = db.Column(CompatUUID(), primary_key=True, default=uuid7.uuid7)
+    event_id = db.Column(CompatUUID(), db.ForeignKey('events.id'))
+    creator_id = db.Column(CompatUUID(), db.ForeignKey('users.id'), nullable=False)
 
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text)
@@ -280,8 +281,8 @@ class MediaLike(db.Model):
     """
     __tablename__ = 'media_likes'
 
-    media_id = db.Column(UUID(as_uuid=True), db.ForeignKey('media_files.id', ondelete='CASCADE'), primary_key=True)
-    user_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id', ondelete='CASCADE'), primary_key=True)
+    media_id = db.Column(CompatUUID(), db.ForeignKey('media_files.id', ondelete='CASCADE'), primary_key=True)
+    user_id = db.Column(CompatUUID(), db.ForeignKey('users.id', ondelete='CASCADE'), primary_key=True)
 
     created_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow, nullable=False)
 
