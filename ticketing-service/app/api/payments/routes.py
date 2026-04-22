@@ -11,6 +11,7 @@ from app.api.payments import payments_bp
 from app.models.ticket import Order
 from app.models.ticket import Ticket, TicketType
 from app.services.gopay import gopay_client, PaymentItem, PaymentState
+from app.utils.security import generate_qr_secret
 
 
 @payments_bp.route('/payments/create', methods=['POST'])
@@ -321,38 +322,35 @@ def _confirm_order(order: Order) -> None:
     Args:
         order: Order to confirm
     """
-    from app.utils.qr_generator import generate_qr_payload, sign_payload
-    import uuid
+    from datetime import datetime
+    from sqlalchemy import select
 
     order.status = 'confirmed'
-    order.confirmed_at = __import__('datetime').datetime.utcnow()
+    order.confirmed_at = datetime.utcnow()
     order.payment_method = 'gopay'
 
-    # Generate tickets for each item
     for item in order.items:
-        ticket_type = TicketType.query.get(item.ticket_type_id)
+        ticket_type = db.session.execute(
+            select(TicketType)
+            .where(TicketType.id == item.ticket_type_id)
+            .with_for_update()
+        ).scalar_one_or_none()
+
         if not ticket_type:
             continue
 
+        ticket_type.quantity_reserved = max(0, ticket_type.quantity_reserved - item.quantity)
+        ticket_type.quantity_sold += item.quantity
+
         for _ in range(item.quantity):
             ticket = Ticket(
-                id=uuid.uuid4(),
                 ticket_type_id=item.ticket_type_id,
-                event_id=order.event_id,
                 order_id=order.id,
                 owner_id=order.user_id,
-                original_price_cents=item.unit_price_cents,
+                original_owner_id=order.user_id,
+                qr_secret=generate_qr_secret(),
                 status='valid',
             )
             db.session.add(ticket)
-            db.session.flush()
-
-            # Generate QR code data
-            qr_payload = generate_qr_payload(ticket)
-            ticket.qr_code_data = sign_payload(qr_payload)
-
-        # Update ticket type availability
-        if ticket_type.quantity_available is not None:
-            ticket_type.quantity_available = max(0, ticket_type.quantity_available - item.quantity)
 
     db.session.commit()

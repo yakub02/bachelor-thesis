@@ -219,7 +219,6 @@ export interface QRCodeData {
   event_id: string
   qr_data: string
   signature: string
-  expires_in: number
   status: string
 }
 

@@ -6,8 +6,7 @@ All cryptographic operations are centralized here.
 import hmac
 import hashlib
 import secrets
-import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Tuple, Optional
 
 
@@ -84,47 +83,43 @@ def verify_api_key(provided_key: str, stored_hash: str) -> bool:
     return hmac.compare_digest(provided_hash, stored_hash)
 
 
-# QR CODE SIGNING (HMAC-SHA256 with time-based rotation.)
-
-# QR code validity window in seconds
-QR_ROTATION_INTERVAL = 120  # TODO: set back to 30 for production
-QR_GRACE_PERIOD = 30  # Accept previous window for sync issues
+# QR CODE SIGNING (HMAC-SHA256, static per-ticket signature).
+# Rotation is deferred to the mobile app; web tickets use a static signature
+# that still cannot be forged without access to both the server signing_key
+# and the per-ticket qr_secret stored in the database.
 
 
 def generate_qr_secret() -> str:
     """Generate cryptographically secure secret for QR signing."""
-    return secrets.token_hex(32)    # 256 bits  
+    return secrets.token_hex(32)    # 256 bits
 
 def generate_qr_payload(
         ticket_id: str,
         event_id: str,
         qr_secret: str,
         signing_key: str,
-        timestamp: Optional[float] = None
+        timestamp: Optional[float] = None,
 ) -> dict:
     """
-       Generate signed QR payload with time-based rotation.
-    
+    Generate signed static QR payload.
+
+    The signature is a function of (ticket_id, event_id, qr_secret) only — it
+    does not change over time. Security still rests on the attacker needing
+    both the global signing_key and the per-ticket qr_secret (both server-only)
+    to produce a valid signature.
+
     Args:
         ticket_id: UUID of the ticket
         event_id: UUID of the event
         qr_secret: Per-ticket secret stored in DB
         signing_key: Global signing key from environment
-        timestamp: Optional timestamp for testing
-    
+        timestamp: Ignored (kept for backwards compatibility with callers/tests)
+
     Returns:
         Dict with payload data and signature
     """
-    if timestamp is None:
-        timestamp = time.time()
-    
-    # Time window (changes every QR_ROTATION_INTERVAL seconds)
-    time_window = int(timestamp // QR_ROTATION_INTERVAL)
+    message = f"{ticket_id}:{event_id}:{qr_secret}"
 
-    # Create message to sign
-    message = f"{ticket_id}:{event_id}:{qr_secret}:{time_window}"
-
-    # Generate HMAC-SHA256 signature
     signature = hmac.new(
         signing_key.encode('utf-8'),
         message.encode('utf-8'),
@@ -134,10 +129,7 @@ def generate_qr_payload(
     return {
         'ticket_id': ticket_id,
         'event_id': event_id,
-        'timestamp': int(timestamp),
-        'window': time_window,
         'signature': signature,
-        'expires_in': QR_ROTATION_INTERVAL - int(timestamp % QR_ROTATION_INTERVAL)
     }
 
 def verify_qr_signature(
@@ -146,34 +138,25 @@ def verify_qr_signature(
     qr_secret: str,
     signing_key: str,
     provided_signature: str,
-    timestamp: Optional[float] = None
+    timestamp: Optional[float] = None,
 ) -> Tuple[bool, str]:
     """
-    Verify QR signature with grace period for clock sync.
-    
+    Verify static QR signature.
+
     Returns:
         Tuple of (is_valid, error_message)
     """
-    if timestamp is None:
-        timestamp = time.time()
-    
-    current_window = int(timestamp // QR_ROTATION_INTERVAL)
-    
-    # Check current window and previous (grace period)
-    for window_offset in [0, -1]:
-        window = current_window + window_offset
-        message = f"{ticket_id}:{event_id}:{qr_secret}:{window}"
-        
-        expected_signature = hmac.new(
-            signing_key.encode('utf-8'),
-            message.encode('utf-8'),
-            hashlib.sha256
-        ).hexdigest()
-        
-        # Constant-time comparison
-        if hmac.compare_digest(expected_signature, provided_signature):
-            return True, "valid"
-    
+    message = f"{ticket_id}:{event_id}:{qr_secret}"
+
+    expected_signature = hmac.new(
+        signing_key.encode('utf-8'),
+        message.encode('utf-8'),
+        hashlib.sha256
+    ).hexdigest()
+
+    if hmac.compare_digest(expected_signature, provided_signature):
+        return True, "valid"
+
     return False, "invalid_signature"
 
 

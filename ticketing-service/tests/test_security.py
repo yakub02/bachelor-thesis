@@ -89,7 +89,6 @@ class TestQrSecurity:
 
         assert 'ticket_id' in payload
         assert 'event_id' in payload
-        assert 'timestamp' in payload
         assert 'signature' in payload
         assert len(payload['signature']) == 64
 

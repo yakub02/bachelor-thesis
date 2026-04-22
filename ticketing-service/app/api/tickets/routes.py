@@ -3,7 +3,7 @@ Ticket endpoints.
 
 Security:
 - All endpoints require authentication
-- QR codes are signed and rotate every 30 seconds
+- QR codes carry a static HMAC signature derived from a per-ticket server-side secret
 - Ticket ownership is verified before operations
 """
 
@@ -201,16 +201,16 @@ def get_ticket(ticket_id):
 # =============================================================================
 
 @tickets_bp.route('/tickets/<ticket_id>/qr', methods=['GET'])
-@limiter.limit("120 per minute")  # Higher limit because QR rotates often
+@limiter.limit("60 per minute")
 @require_auth
 @require_user_id
 def get_ticket_qr(ticket_id):
     """
-    Get current QR code for ticket
+    Get static QR code for ticket
     ---
     tags:
       - Tickets
-    description: QR codes rotate every 30 seconds for security. Only valid tickets can generate QR codes.
+    description: Returns a static HMAC-signed QR payload for the ticket. Only valid tickets can generate QR codes.
     security:
       - ApiKeyAuth: []
       - BearerAuth: []
@@ -235,9 +235,6 @@ def get_ticket_qr(ticket_id):
               description: Data to encode in QR code
             signature:
               type: string
-            expires_in:
-              type: integer
-              description: Seconds until QR expires
             status:
               type: string
       400:
@@ -276,9 +273,8 @@ def get_ticket_qr(ticket_id):
     return jsonify({
         'ticket_id': str(ticket.id),
         'event_id': str(ticket.ticket_type.event_id),
-        'qr_data': f"{ticket.id}:{ticket.ticket_type.event_id}:{qr_payload['signature']}",  # ticket_id:event_id:signature
+        'qr_data': f"{ticket.id}:{ticket.ticket_type.event_id}:{qr_payload['signature']}",
         'signature': qr_payload['signature'],
-        'expires_in': qr_payload['expires_in'],
         'status': ticket.status
     })
 
@@ -577,8 +573,8 @@ def download_ticket_pdf(ticket_id):
         event_venue=event_venue,
         qr_data=qr_data,
         additional_info=(
-            "Important: This printed ticket contains a static QR code. "
-            "For maximum security, use the mobile QR code which refreshes every 30 seconds."
+            "Keep this ticket private. The QR code grants a single entry and "
+            "will be invalidated after it is scanned at the door."
         )
     )
 
