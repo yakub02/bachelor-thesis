@@ -4,7 +4,7 @@ import { useGSAP } from '@gsap/react'
 import { AuthProvider, LanguageProvider } from '@/context'
 import { ToastProvider } from '@/components/ui/Toast'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
-import { Home, HomeLegacy, Login, Register, ForgotPassword, ResetPassword, CreateEvent, EditEvent, MyEvents, TicketAdmin, EventShop, Checkout, MyTickets, TicketDetail, OrganizerDashboard, NewDesign, Events, Profile, AdminDashboard, ScannerPage, ScanDashboard, Picks, Magazine, ArticleDetail } from '@/pages'
+import { Home, Login, Register, ForgotPassword, ResetPassword, CreateEvent, EditEvent, MyEvents, TicketAdmin, EventShop, Checkout, MyTickets, TicketDetail, OrganizerDashboard, Events, Profile, AdminDashboard, ScannerPage, ScanDashboard, Picks, Magazine } from '@/pages'
 
 // Register GSAP plugins
 gsap.registerPlugin(useGSAP)
@@ -18,7 +18,6 @@ function App() {
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/legacy" element={<HomeLegacy />} />
               <Route path="/events" element={<Events />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
@@ -33,14 +32,12 @@ function App() {
               <Route path="/my-tickets" element={<MyTickets />} />
               <Route path="/tickets/:id" element={<TicketDetail />} />
               <Route path="/organizer" element={<OrganizerDashboard />} />
-              <Route path="/new-design" element={<NewDesign />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/scan" element={<ScannerPage />} />
               <Route path="/organizer/live/:eventId" element={<ScanDashboard />} />
               <Route path="/picks" element={<Picks />} />
               <Route path="/magazine" element={<Magazine />} />
-              <Route path="/magazine/articles/:id" element={<ArticleDetail />} />
             </Routes>
           </BrowserRouter>
         </ToastProvider>

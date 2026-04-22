@@ -12,7 +12,7 @@ export const features: Feature[] = [
     icon: 'security',
     title: 'ANTI-SCALP',
     description:
-      'Programmable smart contracts eliminate the secondary exploitation market. Maximum resale price is hardcoded.',
+      'Resale is capped per ticket type — sellers cannot exceed the organizer-defined price ceiling, killing the scalper margin.',
     highlighted: true,
   },
   {

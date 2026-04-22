@@ -16,9 +16,4 @@ export const platformModules: PlatformModule[] = [
     title: 'ARCHIVE',
     description: 'The collective memory of the underground. Every night, recorded forever.',
   },
-  {
-    number: '04',
-    title: 'SECURECOMM',
-    description: 'Encrypted messaging for event coordinators and verified members.',
-  },
 ]

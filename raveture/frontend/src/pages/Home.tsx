@@ -11,22 +11,12 @@ gsap.registerPlugin(ScrollTrigger)
 
 // ════════════════════════════ CONSTANTS ════════════════════════════
 
-const ISSUE_NUMBER = '007'
-
 const HEADLINE_WORDS = ['THE', 'FLOOR', 'KEEPS', 'ITS', 'OWN', 'RECORDS.']
 
 const TICKER_ITEMS = [
   'TECHNO', 'AMBIENT', 'DRUM & BASS', 'ELECTRO', 'DUB TECHNO',
   'TRANCE', 'BREAKCORE', 'EXPERIMENTAL', 'HOUSE', 'HARDGROOVE',
   'IDM', 'GQOM', 'DECONSTRUCTED CLUB', 'MINIMAL', 'GABBER',
-]
-
-const CITY_SIGNALS = [
-  { city: 'PRAGUE', code: 'PRG', count: 42 },
-  { city: 'BERLIN', code: 'BER', count: 128 },
-  { city: 'LONDON', code: 'LDN', count: 87 },
-  { city: 'WARSAW', code: 'WAW', count: 23 },
-  { city: 'VIENNA', code: 'VIE', count: 31 },
 ]
 
 // ════════════════════════════ HELPERS ════════════════════════════
@@ -36,6 +26,15 @@ function formatIssueDate(d = new Date()): string {
   const day = String(d.getDate()).padStart(2, '0')
   const year = d.getFullYear()
   return `${day}.${month}.${year}`
+}
+
+// Bulletin number = ISO week of current year, 3-digit padded — derived,
+// not hardcoded, so it refreshes weekly without a redeploy.
+function computeIssueNumber(d = new Date()): string {
+  const start = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
+  const diffDays = Math.floor((d.getTime() - start.getTime()) / 86400000)
+  const week = Math.floor((diffDays + start.getUTCDay()) / 7) + 1
+  return String(week).padStart(3, '0')
 }
 
 function daysUntil(iso: string): number {
@@ -76,7 +75,6 @@ function CountUp({ to, duration = 1.4 }: { to: number; duration?: number }) {
 
 export function Home() {
   const [events, setEvents] = useState<Event[]>([])
-  const [latestArticle, setLatestArticle] = useState<any>(null)
 
   const heroRef = useRef<HTMLElement>(null)
   const heroSpotlightRef = useRef<HTMLDivElement>(null)
@@ -85,7 +83,6 @@ export function Home() {
   const featuredRef = useRef<HTMLElement>(null)
   const programmeRef = useRef<HTMLElement>(null)
   const principlesRef = useRef<HTMLElement>(null)
-  const dispatchRef = useRef<HTMLElement>(null)
   const ctaRef = useRef<HTMLElement>(null)
 
   // Data
@@ -93,14 +90,8 @@ export function Home() {
     ravetureApi.getEvents({ per_page: 8 }).then((r) => setEvents(r.events)).catch(() => {})
   }, [])
 
-  useEffect(() => {
-    ravetureApi
-      .getForumThreads('editorial', 1)
-      .then((d) => { if (d.threads.length > 0) setLatestArticle(d.threads[0]) })
-      .catch(() => {})
-  }, [])
-
   const issueDate = useMemo(() => formatIssueDate(), [])
+  const issueNumber = useMemo(() => computeIssueNumber(), [])
   const featured = events[0]
   const programme = events.slice(1, 7)
   const totalEvents = events.length
@@ -182,7 +173,7 @@ export function Home() {
 
   // Section scroll reveals
   useGSAP(() => {
-    const scope = [programmeRef, principlesRef, dispatchRef, ctaRef, featuredRef]
+    const scope = [programmeRef, principlesRef, ctaRef, featuredRef]
     scope.forEach((r) => {
       const section = r.current
       if (!section) return
@@ -204,7 +195,7 @@ export function Home() {
         }
       )
     })
-  }, [events.length, !!latestArticle])
+  }, [events.length])
 
   return (
     <div className="relative min-h-screen bg-bg-dark text-white overflow-x-hidden font-body">
@@ -216,7 +207,7 @@ export function Home() {
           <span className="text-primary text-xs leading-none">◆</span>
           <span className="text-white font-medium">RAVETURE</span>
           <span className="opacity-40">/</span>
-          <span>Bulletin Nº&nbsp;{ISSUE_NUMBER}</span>
+          <span>Bulletin Nº&nbsp;{issueNumber}</span>
           <span className="opacity-40">·</span>
           <span>{issueDate}</span>
           <span className="opacity-40 hidden lg:inline">·</span>
@@ -392,7 +383,7 @@ export function Home() {
                 </div>
               </div>
               <div className="hidden sm:block text-right text-[11px] font-mono tracking-[0.2em] uppercase text-white/40 tabular-nums">
-                Cat. Nº {ISSUE_NUMBER}.{String(featured.id || '').slice(0, 4).toUpperCase() || '0001'}
+                Cat. Nº {issueNumber}.{String(featured.id || '').slice(0, 4).toUpperCase() || '0001'}
               </div>
             </div>
 
@@ -663,36 +654,6 @@ export function Home() {
               </p>
             </div>
           )}
-
-          {/* City signal strip */}
-          <div
-            data-scroll
-            className="mt-10 grid grid-cols-2 sm:grid-cols-5 gap-px bg-white/10 border border-white/10"
-          >
-            {CITY_SIGNALS.map((c) => (
-              <div key={c.code} className="bg-bg-dark px-3.5 py-4">
-                <div className="flex items-baseline justify-between">
-                  <span
-                    className="font-headline text-sm md:text-base uppercase"
-                    style={{ fontWeight: 600 }}
-                  >
-                    {c.city}
-                  </span>
-                  <span className="text-[10px] font-mono text-white/30 tabular-nums tracking-[0.15em]">
-                    {c.code}
-                  </span>
-                </div>
-                <div className="flex items-baseline justify-between mt-2.5 border-t border-white/10 pt-2.5">
-                  <span className="text-[10px] font-mono tracking-[0.22em] uppercase text-white/40">
-                    Active
-                  </span>
-                  <span className="font-mono tabular-nums text-sm text-primary">
-                    {String(c.count).padStart(3, '0')}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
@@ -775,89 +736,6 @@ export function Home() {
           </div>
         </div>
       </section>
-
-      {/* ═══════════════════════ LATEST DISPATCH ═══════════════════════ */}
-      {latestArticle && (
-        <section ref={dispatchRef} className="relative border-b border-white/10">
-          <div className="max-w-[1440px] mx-auto px-6 sm:px-10 py-16 sm:py-24">
-            <header
-              data-scroll
-              className="flex items-end justify-between pb-5 mb-8 border-b border-white/10"
-            >
-              <div>
-                <div className="text-[10px] font-mono tracking-[0.22em] uppercase text-primary mb-2.5">
-                  § 05 / Dispatch
-                </div>
-                <h2
-                  className="font-headline text-[clamp(1.75rem,4vw,3rem)] leading-[0.95] tracking-[-0.03em] uppercase"
-                  style={{ fontWeight: 700 }}
-                >
-                  From the<br />magazine.
-                </h2>
-              </div>
-              <Link
-                to="/magazine"
-                className="hidden sm:inline-block text-[11px] font-mono tracking-[0.22em] uppercase text-white/60 hover:text-primary link-underline transition-colors"
-              >
-                All dispatches →
-              </Link>
-            </header>
-
-            <Link
-              to={`/magazine/articles/${latestArticle.id}`}
-              data-scroll
-              className="group grid grid-cols-12 gap-6 sm:gap-10 items-start"
-            >
-              <div className="col-span-12 md:col-span-5 aspect-[4/5] md:aspect-[3/4] overflow-hidden bg-graphite relative">
-                {latestArticle.cover_image_url ? (
-                  <>
-                    <img
-                      src={latestArticle.cover_image_url}
-                      alt={latestArticle.title}
-                      className="absolute inset-0 w-full h-full object-cover grayscale contrast-[1.1] group-hover:grayscale-0 group-hover:scale-[1.02] transition-[filter,transform] duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                    <div className="absolute top-4 left-4 text-[10px] font-mono tracking-[0.22em] uppercase px-2 py-1 bg-white text-black font-semibold">
-                      Editorial
-                    </div>
-                  </>
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center text-primary/30">
-                    <span className="font-headline text-[10rem]" style={{ fontWeight: 400 }}>§</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="col-span-12 md:col-span-7 md:pt-2">
-                <div className="text-[10px] font-mono tracking-[0.22em] uppercase text-white/40 tabular-nums">
-                  {new Date(latestArticle.created_at).toLocaleDateString('en-GB', {
-                    day: '2-digit',
-                    month: 'short',
-                    year: 'numeric',
-                  })}
-                  <span className="mx-3 opacity-40">·</span>
-                  <span className="text-primary">Read ~ 6 min</span>
-                </div>
-                <h3
-                  className="mt-3 font-headline text-[clamp(1.75rem,4vw,3.5rem)] leading-[0.95] tracking-[-0.03em] uppercase text-white group-hover:text-primary transition-colors duration-500"
-                  style={{ fontWeight: 700 }}
-                >
-                  {latestArticle.title}
-                </h3>
-                {(latestArticle.subtitle || latestArticle.preview_content) && (
-                  <p className="mt-5 text-white/60 text-[15px] leading-[1.65] max-w-xl">
-                    {latestArticle.subtitle || latestArticle.preview_content}
-                  </p>
-                )}
-                <div className="mt-8 inline-flex items-center gap-3 text-[11px] font-mono tracking-[0.22em] uppercase text-white link-underline">
-                  <span>Read the piece</span>
-                  <span className="inline-block group-hover:translate-x-1 transition-transform">→</span>
-                </div>
-              </div>
-            </Link>
-          </div>
-        </section>
-      )}
 
       {/* ═══════════════════════ FINAL CTA ═══════════════════════ */}
       <section ref={ctaRef} className="relative overflow-hidden">

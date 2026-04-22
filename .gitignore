@@ -64,3 +64,4 @@ raveture/frontend/.impeccable.md
 summary.txt
 ticketing-service/coverage.xml
 ticketing-service/.coverage
+raveture/backend/coverage.xml
