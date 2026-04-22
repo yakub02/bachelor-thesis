@@ -12,29 +12,51 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { ReactNode } from 'react';
 import { screen, waitFor } from '@testing-library/react';
 import { renderWithProviders, userEvent } from '@/test/utils/test-utils';
 import { Login } from './Login';
 import { mockUsers } from '@/test/mocks/mockData';
-import * as authContext from '@/context/AuthContext';
 
-// Mock GSAP to prevent animation-related issues in tests
-vi.mock('gsap', () => ({
-  default: {
-    timeline: () => ({
-      fromTo: vi.fn().mockReturnThis(),
-    }),
-  },
+// Hoisted mocks so they are available inside vi.mock factories
+const { mockLogin, mockNavigate, mockAuthState } = vi.hoisted(() => {
+  const mockLogin = vi.fn();
+  return {
+    mockLogin,
+    mockNavigate: vi.fn(),
+    mockAuthState: {
+      user: null as any,
+      userId: null as string | null,
+      isAuthenticated: false,
+      isLoading: false,
+      login: mockLogin,
+      register: vi.fn(),
+      logout: vi.fn(),
+      refreshUser: vi.fn(),
+    },
+  };
+});
+
+// Passthrough AuthProvider + controllable useAuth — bypasses real init/loading gate
+vi.mock('@/context/AuthContext', () => ({
+  AuthProvider: ({ children }: { children: ReactNode }) => children,
+  useAuth: () => mockAuthState,
 }));
 
+// GSAP — no-op, callback isn't executed so gsap.fromTo never fires
+vi.mock('gsap', () => ({
+  default: {
+    timeline: () => ({ fromTo: vi.fn().mockReturnThis() }),
+    fromTo: vi.fn(),
+  },
+}));
 vi.mock('@gsap/react', () => ({
   useGSAP: vi.fn(),
 }));
 
-// Mock useNavigate
-const mockNavigate = vi.fn();
+// Preserve BrowserRouter/Link/useSearchParams; replace useNavigate
 vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom');
+  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
   return {
     ...actual,
     useNavigate: () => mockNavigate,
@@ -42,43 +64,34 @@ vi.mock('react-router-dom', async () => {
 });
 
 describe('Login Component', () => {
-  const mockLogin = vi.fn();
-
   beforeEach(() => {
     vi.clearAllMocks();
-    mockNavigate.mockClear();
-
-    // Mock useAuth hook
-    vi.spyOn(authContext, 'useAuth').mockReturnValue({
-      user: null,
-      isAuthenticated: false,
-      isLoading: false,
-      login: mockLogin,
-      logout: vi.fn(),
-      register: vi.fn(),
-      refreshAccessToken: vi.fn(),
-    });
+    // Reset to default auth state before each test
+    mockAuthState.user = null;
+    mockAuthState.userId = null;
+    mockAuthState.isAuthenticated = false;
+    mockAuthState.isLoading = false;
   });
 
   describe('Rendering', () => {
     it('should render login form with all fields', () => {
       renderWithProviders(<Login />);
 
-      // Check for logo
-      expect(screen.getByText('RAVETURE')).toBeInTheDocument();
+      // Logo appears in the issue strip
+      expect(screen.getByRole('link', { name: 'RAVETURE' })).toBeInTheDocument();
 
-      // Check for header
-      expect(screen.getByText('Welcome Back')).toBeInTheDocument();
-      expect(screen.getByText('Sign in to access your account')).toBeInTheDocument();
+      // Header copy from translations.en
+      expect(screen.getByText('Welcome back.')).toBeInTheDocument();
+      expect(screen.getByText('Sign in to access your tickets and events.')).toBeInTheDocument();
 
-      // Check for form fields
+      // Form fields (labels are rendered as <span> inside <label>, implicit association)
       expect(screen.getByLabelText('Email')).toBeInTheDocument();
       expect(screen.getByLabelText('Password')).toBeInTheDocument();
 
-      // Check for submit button
+      // Submit button
       expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
 
-      // Check for register link
+      // Register link
       expect(screen.getByText(/don't have an account/i)).toBeInTheDocument();
       expect(screen.getByRole('link', { name: /register/i })).toBeInTheDocument();
     });
@@ -86,7 +99,7 @@ describe('Login Component', () => {
     it('should render back to home link', () => {
       renderWithProviders(<Login />);
 
-      const homeLink = screen.getByRole('link', { name: /RAVETURE/i });
+      const homeLink = screen.getByRole('link', { name: 'RAVETURE' });
       expect(homeLink).toHaveAttribute('href', '/');
     });
   });
@@ -218,7 +231,8 @@ describe('Login Component', () => {
         expect(mockLogin).toHaveBeenCalled();
       });
 
-      expect(screen.queryByText(/error/i)).not.toBeInTheDocument();
+      expect(screen.queryByText('Please fill in all fields')).not.toBeInTheDocument();
+      expect(screen.queryByText('Login failed. Please check your credentials.')).not.toBeInTheDocument();
     });
   });
 
@@ -265,7 +279,8 @@ describe('Login Component', () => {
 
     it('should show generic error message for unknown errors', async () => {
       const user = userEvent.setup();
-      mockLogin.mockRejectedValueOnce(new Error());
+      // Reject with a string — no .message/.error property on the value
+      mockLogin.mockRejectedValueOnce('boom');
 
       renderWithProviders(<Login />);
 
@@ -323,10 +338,10 @@ describe('Login Component', () => {
         expect(passwordInput.type).toBe('text');
       });
 
-      // Click again to hide
-      await user.click(toggleButton);
+      // Click again to hide (aria-label flips to 'Hide password')
+      const hideButton = screen.getByRole('button', { name: /hide password/i });
+      await user.click(hideButton);
 
-      // Password should be hidden again
       await waitFor(() => {
         expect(passwordInput.type).toBe('password');
       });
@@ -335,37 +350,21 @@ describe('Login Component', () => {
 
   describe('Loading State', () => {
     it('should disable submit button when loading', () => {
-      vi.spyOn(authContext, 'useAuth').mockReturnValue({
-        user: null,
-        isAuthenticated: false,
-        isLoading: true,
-        login: mockLogin,
-        logout: vi.fn(),
-        register: vi.fn(),
-        refreshAccessToken: vi.fn(),
-      });
+      mockAuthState.isLoading = true;
 
       renderWithProviders(<Login />);
 
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
+      const submitButton = screen.getByRole('button', { name: /signing in/i });
       expect(submitButton).toBeDisabled();
     });
 
     it('should show loading indicator when isLoading is true', () => {
-      vi.spyOn(authContext, 'useAuth').mockReturnValue({
-        user: null,
-        isAuthenticated: false,
-        isLoading: true,
-        login: mockLogin,
-        logout: vi.fn(),
-        register: vi.fn(),
-        refreshAccessToken: vi.fn(),
-      });
+      mockAuthState.isLoading = true;
 
       renderWithProviders(<Login />);
 
-      // Check for loading spinner or text
-      expect(screen.getByRole('button', { name: /sign in/i })).toBeDisabled();
+      // Button text changes to 'Signing in...' when loading
+      expect(screen.getByRole('button', { name: /signing in/i })).toBeInTheDocument();
     });
   });
 
